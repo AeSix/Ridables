@@ -9,8 +9,8 @@ public class SnowGolemConfig extends MobConfig {
     public float AI_JUMP_POWER = 0.42F;
     public float AI_STEP_HEIGHT = 0.6F;
     public double AI_FOLLOW_RANGE = 16.0D;
-    public boolean AI_SHEARS_DROPS_PUMPKIN = true;
-    public boolean AI_ADD_PUMPKIN_TO_HEAD = true;
+    public boolean SHEARS_DROPS_PUMPKIN = true;
+    public boolean ADD_PUMPKIN_TO_HEAD = true;
     public float AI_DAMAGE_WHEN_WET = 1.0F;
     public float AI_DAMAGE_WHEN_HOT = 1.0F;
     public boolean AI_SNOW_TRAIL_ENABLED = true;
@@ -51,8 +51,8 @@ public class SnowGolemConfig extends MobConfig {
             addDefault("ai.jump-power", AI_JUMP_POWER);
             addDefault("ai.step-height", AI_STEP_HEIGHT);
             addDefault("ai.follow-range", AI_FOLLOW_RANGE);
-            addDefault("ai.shears-drop-pumpkin", AI_SHEARS_DROPS_PUMPKIN);
-            addDefault("ai.add-pumpkin-to-head", AI_ADD_PUMPKIN_TO_HEAD);
+            addDefault("ai.shears-drop-pumpkin", SHEARS_DROPS_PUMPKIN);
+            addDefault("ai.add-pumpkin-to-head", ADD_PUMPKIN_TO_HEAD);
             addDefault("ai.damage.when-wet", AI_DAMAGE_WHEN_WET);
             addDefault("ai.damage.when-hot", AI_DAMAGE_WHEN_HOT);
             addDefault("ai.snow-trail.enabled", AI_SNOW_TRAIL_ENABLED);
@@ -80,8 +80,8 @@ public class SnowGolemConfig extends MobConfig {
         AI_JUMP_POWER = (float) getDouble("ai.jump-power");
         AI_STEP_HEIGHT = (float) getDouble("ai.step-height");
         AI_FOLLOW_RANGE = getDouble("ai.follow-range");
-        AI_SHEARS_DROPS_PUMPKIN = getBoolean("ai.shears-drop-pumpkin");
-        AI_ADD_PUMPKIN_TO_HEAD = getBoolean("ai.add-pumpkin-to-head");
+        SHEARS_DROPS_PUMPKIN = getBoolean("ai.shears-drop-pumpkin");
+        ADD_PUMPKIN_TO_HEAD = getBoolean("ai.add-pumpkin-to-head");
         AI_DAMAGE_WHEN_WET = (float) getDouble("ai.damage.when-wet");
         AI_DAMAGE_WHEN_HOT = (float) getDouble("ai.damage.when-hot");
         AI_SNOW_TRAIL_ENABLED = getBoolean("ai.snow-trail.enabled");

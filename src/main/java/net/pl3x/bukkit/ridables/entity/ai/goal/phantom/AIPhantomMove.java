@@ -1,6 +1,6 @@
 package net.pl3x.bukkit.ridables.entity.ai.goal.phantom;
 
-import net.minecraft.server.v1_13_R2.PathfinderGoal;
+import net.minecraft.server.v1_14_R1.PathfinderGoal;
 import net.pl3x.bukkit.ridables.entity.monster.RidablePhantom;
 
 public abstract class AIPhantomMove extends PathfinderGoal {

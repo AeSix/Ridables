@@ -1,6 +1,6 @@
 package net.pl3x.bukkit.ridables.entity.ai.goal.wither;
 
-import net.minecraft.server.v1_13_R2.PathfinderGoal;
+import net.minecraft.server.v1_14_R1.PathfinderGoal;
 import net.pl3x.bukkit.ridables.entity.boss.RidableWither;
 
 public class AIWitherDoNothing extends PathfinderGoal {

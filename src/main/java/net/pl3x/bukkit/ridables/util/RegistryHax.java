@@ -1,57 +1,50 @@
 package net.pl3x.bukkit.ridables.util;
 
 import com.mojang.datafixers.types.Type;
-import net.minecraft.server.v1_13_R2.BiomeBase;
-import net.minecraft.server.v1_13_R2.DataConverterRegistry;
-import net.minecraft.server.v1_13_R2.DataConverterTypes;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityInsentient;
-import net.minecraft.server.v1_13_R2.EntityTypes;
-import net.minecraft.server.v1_13_R2.EnumCreatureType;
-import net.minecraft.server.v1_13_R2.IRegistry;
-import net.minecraft.server.v1_13_R2.MinecraftKey;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.BiomeBase;
+import net.minecraft.server.v1_14_R1.DataConverterRegistry;
+import net.minecraft.server.v1_14_R1.DataConverterTypes;
+import net.minecraft.server.v1_14_R1.EntityInsentient;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumCreatureType;
+import net.minecraft.server.v1_14_R1.IRegistry;
+import net.minecraft.server.v1_14_R1.MinecraftKey;
 import net.pl3x.bukkit.ridables.configuration.Config;
+import net.pl3x.bukkit.ridables.configuration.mob.GiantConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.IllusionerConfig;
 import net.pl3x.bukkit.ridables.data.BiomeData;
-import net.pl3x.bukkit.ridables.entity.RidableEntity;
-import net.pl3x.bukkit.ridables.entity.monster.RidableGiant;
-import net.pl3x.bukkit.ridables.entity.monster.RidableIllusioner;
+import net.pl3x.bukkit.ridables.entity.RidableType;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.function.Function;
 
 public class RegistryHax {
-    private static Field entityClass;
-    private static Field entityFunction;
-    private static Method biomebase_addSpawn;
+    private static Field entityTypes_b_field;
+    private static Method biomeBase_addSpawn;
 
     static {
         try {
-            entityClass = EntityTypes.class.getDeclaredField("aS");
-            entityClass.setAccessible(true);
-            entityFunction = EntityTypes.class.getDeclaredField("aT");
-            entityFunction.setAccessible(true);
-            biomebase_addSpawn = BiomeBase.class.getDeclaredMethod("a", EnumCreatureType.class, BiomeBase.BiomeMeta.class);
-            biomebase_addSpawn.setAccessible(true);
+            entityTypes_b_field = EntityTypes.class.getDeclaredField("aZ");
+            entityTypes_b_field.setAccessible(true);
+            biomeBase_addSpawn = BiomeBase.class.getDeclaredMethod("a", EnumCreatureType.class, BiomeBase.BiomeMeta.class);
+            biomeBase_addSpawn.setAccessible(true);
         } catch (NoSuchFieldException | NoSuchMethodException ignore) {
         }
     }
 
-    public static void injectNewEntityTypes(String name, String extend_from, Class<? extends Entity> clazz, Function<? super World, ? extends Entity> function) {
-        Map<Object, Type<?>> dataTypes = (Map<Object, Type<?>>) DataConverterRegistry.a().getSchema(15190).findChoiceType(DataConverterTypes.n).types();
+    public static void injectNewEntityTypes(String name, String extend_from, EntityTypes.b entityTypes_b, EnumCreatureType creatureType, float width, float height) {
+        Map<Object, Type<?>> dataTypes = (Map<Object, Type<?>>) DataConverterRegistry.a().getSchema(15190).findChoiceType(DataConverterTypes.o).types(); // entity_tree
         dataTypes.put("minecraft:" + name, dataTypes.get("minecraft:" + extend_from));
-        EntityTypes.a(name, EntityTypes.a.a(clazz, function));
+        IRegistry.a(IRegistry.ENTITY_TYPE, name, EntityTypes.a.a(entityTypes_b, creatureType).a(width, height).a(name));
         Logger.info("Successfully injected new entity: &a" + name);
     }
 
-    public static boolean injectReplacementEntityTypes(EntityTypes<?> entityTypes, Class<? extends RidableEntity> clazz, Function<? super World, ? extends RidableEntity> function) {
+    public static boolean injectReplacementEntityTypes(EntityTypes<?> entityTypes, EntityTypes.b entityTypes_b) {
         MinecraftKey key = IRegistry.ENTITY_TYPE.getKey(entityTypes);
         try {
-            entityClass.set(entityTypes, clazz);
-            entityFunction.set(entityTypes, function);
+            entityTypes_b_field.set(entityTypes, entityTypes_b);
         } catch (IllegalAccessException ignore) {
             return false;
         }
@@ -60,20 +53,23 @@ public class RegistryHax {
     }
 
     public static void addMobsToBiomes() {
-        if (Config.GIANT_ENABLED && RidableGiant.CONFIG.SPAWN_NATURALLY) {
-            if (RidableGiant.CONFIG.SPAWN_BIOMES.isEmpty()) {
+        GiantConfig giantConfig = (GiantConfig) RidableType.GIANT.getConfig();
+        if (Config.isEnabled("giant") && giantConfig.SPAWN_NATURALLY) {
+            if (giantConfig.SPAWN_BIOMES.isEmpty()) {
                 Logger.warn("Giant is configured to spawn naturally in biomes, but no biomes are set!");
             } else {
                 Logger.info("Adding Giant to spawn naturally in biomes");
-                RidableGiant.CONFIG.SPAWN_BIOMES.forEach(data -> injectSpawn(data, EntityTypes.GIANT));
+                giantConfig.SPAWN_BIOMES.forEach(data -> injectSpawn(data, EntityTypes.GIANT));
             }
         }
-        if (Config.ILLUSIONER_ENABLED && RidableIllusioner.CONFIG.SPAWN_NATURALLY) {
-            if (RidableIllusioner.CONFIG.SPAWN_BIOMES.isEmpty()) {
+
+        IllusionerConfig illusionerConfig = (IllusionerConfig) RidableType.ILLUSIONER.getConfig();
+        if (Config.isEnabled("illusioner") && illusionerConfig.SPAWN_NATURALLY) {
+            if (illusionerConfig.SPAWN_BIOMES.isEmpty()) {
                 Logger.warn("Illusioner is configured to spawn naturally in biomes, but no biomes are set!");
             } else {
                 Logger.info("Adding Illusioner to spawn naturally in biomes");
-                RidableIllusioner.CONFIG.SPAWN_BIOMES.forEach(data -> injectSpawn(data, EntityTypes.ILLUSIONER));
+                illusionerConfig.SPAWN_BIOMES.forEach(data -> injectSpawn(data, EntityTypes.ILLUSIONER));
             }
         }
     }
@@ -83,7 +79,7 @@ public class RegistryHax {
         BiomeBase biome = IRegistry.BIOME.get(new MinecraftKey(data.getBiome()));
         if (biome != null) {
             try {
-                biomebase_addSpawn.invoke(biome, EnumCreatureType.MONSTER, new BiomeBase.BiomeMeta(type, data.getWeight(), data.getMin(), data.getMax()));
+                biomeBase_addSpawn.invoke(biome, EnumCreatureType.MONSTER, new BiomeBase.BiomeMeta(type, data.getWeight(), data.getMin(), data.getMax()));
             } catch (IllegalAccessException | InvocationTargetException ignore) {
             }
         } else {

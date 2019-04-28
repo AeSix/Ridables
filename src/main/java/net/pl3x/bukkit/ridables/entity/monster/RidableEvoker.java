@@ -1,66 +1,46 @@
 package net.pl3x.bukkit.ridables.entity.monster;
 
-import net.minecraft.server.v1_13_R2.BlockPosition;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityEvoker;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityInsentient;
-import net.minecraft.server.v1_13_R2.EntityIronGolem;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EntitySheep;
-import net.minecraft.server.v1_13_R2.EntityVillager;
-import net.minecraft.server.v1_13_R2.EnumDirection;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.MathHelper;
-import net.minecraft.server.v1_13_R2.VoxelShape;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.Block;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityEvoker;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumDirection;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.MathHelper;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.VoxelShape;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.Lang;
 import net.pl3x.bukkit.ridables.configuration.mob.EvokerConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASD;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAttackNearest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAvoidTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIHurtByTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AISwim;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWander;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWatchClosest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.evoker.AIEvokerCastingSpell;
-import net.pl3x.bukkit.ridables.entity.ai.goal.evoker.AIEvokerFangsSpell;
-import net.pl3x.bukkit.ridables.entity.ai.goal.evoker.AIEvokerSummonSpell;
-import net.pl3x.bukkit.ridables.entity.ai.goal.evoker.AIEvokerWololoSpell;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASD;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.entity.projectile.CustomEvokerFangs;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
 import net.pl3x.bukkit.ridables.util.Const;
-import org.bukkit.block.Block;
+import org.bukkit.Bukkit;
 import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
-import java.lang.reflect.Field;
-
 public class RidableEvoker extends EntityEvoker implements RidableEntity {
-    public static final EvokerConfig CONFIG = new EvokerConfig();
-
-    private static Field wololoTarget;
-
-    static {
-        try {
-            wololoTarget = EntityEvoker.class.getDeclaredField("c");
-            wololoTarget.setAccessible(true);
-        } catch (NoSuchFieldException ignore) {
-        }
-    }
+    private static EvokerConfig config;
 
     private int spellCooldown = 0;
 
-    public RidableEvoker(World world) {
-        super(world);
+    public RidableEvoker(EntityTypes<? extends EntityEvoker> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new ControllerWASD(this);
         lookController = new LookController(this);
+
+        if (config == null) {
+            config = getConfig();
+        }
     }
 
     @Override
@@ -68,86 +48,31 @@ public class RidableEvoker extends EntityEvoker implements RidableEntity {
         return RidableType.EVOKER;
     }
 
-    // canDespawn
     @Override
-    public boolean isTypeNotPersistent() {
-        return !hasCustomName() && !isLeashed();
+    public EvokerConfig getConfig() {
+        return (EvokerConfig) getType().getConfig();
     }
 
     @Override
-    protected void initAttributes() {
-        super.initAttributes();
-        getAttributeMap().b(RidableType.RIDING_SPEED); // registerAttribute
-        reloadAttributes();
+    public double getRidingSpeed() {
+        return config.RIDING_SPEED;
     }
 
     @Override
-    public void reloadAttributes() {
-        getAttributeInstance(RidableType.RIDING_SPEED).setValue(CONFIG.RIDING_SPEED);
-        getAttributeInstance(GenericAttributes.maxHealth).setValue(CONFIG.MAX_HEALTH);
-        getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(CONFIG.BASE_SPEED);
-        getAttributeInstance(GenericAttributes.FOLLOW_RANGE).setValue(CONFIG.AI_FOLLOW_RANGE);
-    }
-
-    // initAI - override vanilla AI
-    @Override
-    protected void n() {
-        goalSelector.a(0, new AISwim(this));
-        goalSelector.a(1, new AIEvokerCastingSpell(this));
-        goalSelector.a(2, new AIAvoidTarget<>(this, EntityHuman.class, 8.0F, 0.6D, 1.0D));
-        goalSelector.a(4, new AIEvokerSummonSpell(this));
-        goalSelector.a(5, new AIEvokerFangsSpell(this));
-        goalSelector.a(6, new AIEvokerWololoSpell(this));
-        goalSelector.a(8, new AIWander(this, 0.6D));
-        goalSelector.a(9, new AIWatchClosest(this, EntityHuman.class, 3.0F, 1.0F));
-        goalSelector.a(10, new AIWatchClosest(this, EntityInsentient.class, 8.0F));
-        targetSelector.a(1, new AIHurtByTarget(this, true, EntityEvoker.class));
-        targetSelector.a(2, new AIAttackNearest<>(this, EntityHuman.class, true).b(300)); // setUnseenMemoryTicks
-        targetSelector.a(3, new AIAttackNearest<>(this, EntityVillager.class, false).b(300)); // setUnseenMemoryTicks
-        targetSelector.a(3, new AIAttackNearest<>(this, EntityIronGolem.class, false));
+    protected void initPathfinder() {
+        // TODO - tame these new AI pathfinders
     }
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
-        return CONFIG.RIDING_RIDE_IN_WATER;
+    public boolean be() {
+        return config.RIDING_RIDE_IN_WATER;
     }
 
     // getJumpUpwardsMotion
     @Override
-    protected float cG() {
-        return getRider() == null ? CONFIG.AI_JUMP_POWER : CONFIG.RIDING_JUMP_POWER;
-    }
-
-    public int getSpellTicks() {
-        return b;
-    }
-
-    public void setSpellTicks(int ticks) {
-        b = ticks;
-    }
-
-    public EntitySheep getWololoTarget() {
-        try {
-            return (EntitySheep) wololoTarget.get(this);
-        } catch (IllegalAccessException ignore) {
-        }
-        return null;
-    }
-
-    public void setWololoTarget(EntitySheep sheep) {
-        try {
-            wololoTarget.set(this, sheep);
-        } catch (IllegalAccessException ignore) {
-        }
-    }
-
-    public int getHorizontalFaceSpeed() {
-        return L();
-    }
-
-    public int getVerticalFaceSpeed() {
-        return K();
+    protected float cW() {
+        return getRider() == null ? super.cW() : config.RIDING_JUMP_POWER;
     }
 
     @Override
@@ -155,14 +80,14 @@ public class RidableEvoker extends EntityEvoker implements RidableEntity {
         if (spellCooldown > 0) {
             spellCooldown--;
         }
-        Q = getRider() == null ? CONFIG.AI_STEP_HEIGHT : CONFIG.RIDING_STEP_HEIGHT;
+        K = getRider() == null ? 0.6F : config.RIDING_STEP_HEIGHT;
         super.mobTick();
     }
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 
@@ -173,19 +98,21 @@ public class RidableEvoker extends EntityEvoker implements RidableEntity {
             return true; // handled by vanilla action
         }
         if (hand == EnumHand.MAIN_HAND && !entityhuman.isSneaking() && passengers.isEmpty() && !entityhuman.isPassenger()) {
-            return tryRide(entityhuman, CONFIG.RIDING_SADDLE_REQUIRE, CONFIG.RIDING_SADDLE_CONSUME);
+            return tryRide(entityhuman, config.RIDING_SADDLE_REQUIRE, config.RIDING_SADDLE_CONSUME);
         }
         return false;
     }
 
     @Override
-    public boolean removePassenger(Entity passenger, boolean notCancellable) {
+    public boolean removePassenger(Entity passenger) {
         if (passenger instanceof EntityPlayer && !passengers.isEmpty() && passenger == passengers.get(0)) {
-            if (!new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), notCancellable).callEvent() && !notCancellable) {
+            RidableDismountEvent event = new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), false);
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancellable()) {
                 return false; // cancelled
             }
         }
-        return super.removePassenger(passenger, notCancellable);
+        return super.removePassenger(passenger);
     }
 
     @Override
@@ -194,7 +121,7 @@ public class RidableEvoker extends EntityEvoker implements RidableEntity {
     }
 
     @Override
-    public boolean onClick(Block block, BlockFace blockFace, EnumHand hand) {
+    public boolean onClick(org.bukkit.block.Block block, BlockFace blockFace, EnumHand hand) {
         return handleClick(hand);
     }
 
@@ -221,14 +148,14 @@ public class RidableEvoker extends EntityEvoker implements RidableEntity {
      * @return True if spell was successfully cast
      */
     public boolean castSpell(EntityPlayer rider, boolean circle) {
-        spellCooldown = CONFIG.RIDING_FANGS_COOLDOWN;
+        spellCooldown = config.RIDING_FANGS_COOLDOWN;
 
         if (rider == null) {
             return false;
         }
 
         CraftPlayer player = (CraftPlayer) ((Entity) rider).getBukkitEntity();
-        if (!player.hasPermission("allow.special.evoker")) {
+        if (!player.hasPermission("ridables.special.evoker")) {
             Lang.send(player, Lang.SHOOT_NO_PERMISSION);
             return false;
         }
@@ -240,7 +167,7 @@ public class RidableEvoker extends EntityEvoker implements RidableEntity {
     }
 
     public void castFangs(EntityPlayer rider, double x, double z, double minY, double maxY, boolean circle) {
-        float distance = (float) MathHelper.c((locZ + z) - locZ, (locX + x) - locX);
+        float distance = (float) MathHelper.d((locZ + z) - locZ, (locX + x) - locX);
         if (circle) {
             for (int i = 0; i < 5; ++i) {
                 float rotationYaw = distance + (float) i * Const.PI_FLOAT * 0.4F;
@@ -261,7 +188,8 @@ public class RidableEvoker extends EntityEvoker implements RidableEntity {
     private void spawnFang(EntityPlayer rider, double x, double z, double minY, double maxY, float rotationYaw, int warmupDelayTicks) {
         BlockPosition pos = new BlockPosition(x, maxY, z);
         do {
-            if (!world.q(pos) && world.q(pos.down())) { // !isTopSolid(pos) && isTopSolid(pos.down())
+            BlockPosition posDown = pos.down();
+            if (Block.d(world.getType(posDown), world, posDown, EnumDirection.UP)) {
                 double yOffset = 0.0D;
                 if (!world.isEmpty(pos)) { // !world.isAirBlock
                     VoxelShape shape = world.getType(pos).getCollisionShape(world, pos);
@@ -269,11 +197,10 @@ public class RidableEvoker extends EntityEvoker implements RidableEntity {
                         yOffset = shape.c(EnumDirection.EnumAxis.Y); // shape.getEnd
                     }
                 }
-                CustomEvokerFangs fangs = new CustomEvokerFangs(world, x, (double) pos.getY() + yOffset, z, rotationYaw, warmupDelayTicks, this, rider);
-                world.addEntity(fangs);
+                world.addEntity(new CustomEvokerFangs(world, x, (double) pos.getY() + yOffset, x, rotationYaw, warmupDelayTicks, this, rider));
                 break;
             }
-            pos = pos.down();
+            pos = posDown;
         } while (pos.getY() >= MathHelper.floor(minY) - 1);
     }
 }

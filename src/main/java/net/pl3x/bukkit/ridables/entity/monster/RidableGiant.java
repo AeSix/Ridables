@@ -1,37 +1,30 @@
 package net.pl3x.bukkit.ridables.entity.monster;
 
-import net.minecraft.server.v1_13_R2.BlockPosition;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityGiantZombie;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityIronGolem;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EntityVillager;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.IWorldReader;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityGiantZombie;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityIronGolem;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EntityVillager;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.GenericAttributes;
+import net.minecraft.server.v1_14_R1.IWorldReader;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.mob.GiantConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASD;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAttackMelee;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAttackNearest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIHurtByTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AILookIdle;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIMoveTowardsRestriction;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AISwim;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWanderAvoidWater;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWatchClosest;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASD;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
 import org.bukkit.entity.Player;
 
 public class RidableGiant extends EntityGiantZombie implements RidableEntity {
     public static GiantConfig CONFIG = new GiantConfig();
 
-    public RidableGiant(World world) {
-        super(world);
+    public RidableGiant(EntityTypes<? extends EntityGiantZombie> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new ControllerWASD(this);
         lookController = new LookController(this);
     }
@@ -87,7 +80,7 @@ public class RidableGiant extends EntityGiantZombie implements RidableEntity {
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
+    public boolean be() {
         return CONFIG.RIDING_RIDE_IN_WATER;
     }
 
@@ -104,14 +97,14 @@ public class RidableGiant extends EntityGiantZombie implements RidableEntity {
 
     @Override
     protected void mobTick() {
-        Q = getRider() == null ? CONFIG.AI_STEP_HEIGHT : CONFIG.RIDING_STEP_HEIGHT;
+        K = getRider() == null ? 0.6F : CONFIG.RIDING_STEP_HEIGHT;
         super.mobTick();
     }
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 

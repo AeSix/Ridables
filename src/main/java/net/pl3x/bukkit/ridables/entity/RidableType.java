@@ -1,16 +1,71 @@
 package net.pl3x.bukkit.ridables.entity;
 
 import com.google.common.collect.Maps;
-import net.minecraft.server.v1_13_R2.AttributeRanged;
-import net.minecraft.server.v1_13_R2.BlockPosition;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityTypes;
-import net.minecraft.server.v1_13_R2.IAttribute;
-import net.minecraft.server.v1_13_R2.IChatBaseComponent;
-import net.minecraft.server.v1_13_R2.NBTTagCompound;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumMobSpawn;
+import net.minecraft.server.v1_14_R1.IChatBaseComponent;
+import net.minecraft.server.v1_14_R1.NBTTagCompound;
 import net.pl3x.bukkit.ridables.configuration.Config;
 import net.pl3x.bukkit.ridables.configuration.MobConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.BatConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.BlazeConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.CaveSpiderConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.ChickenConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.CodConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.CowConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.CreeperConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.DolphinConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.DonkeyConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.DrownedConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.ElderGuardianConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.EnderDragonConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.EndermanConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.EndermiteConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.EvokerConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.GhastConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.GiantConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.GuardianConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.HorseConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.HuskConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.IllusionerConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.IronGolemConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.LlamaConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.MagmaCubeConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.MooshroomConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.MuleConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.OcelotConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.ParrotConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.PhantomConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.PigConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.PolarBearConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.PufferfishConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.RabbitConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.SalmonConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.SheepConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.ShulkerConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.SilverfishConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.SkeletonConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.SkeletonHorseConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.SlimeConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.SnowGolemConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.SpiderConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.SquidConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.StrayConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.TropicalFishConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.TurtleConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.VexConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.VillagerConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.VindicatorConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.WitchConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.WitherConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.WitherSkeletonConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.WolfConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.ZombieConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.ZombieHorseConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.ZombiePigmanConfig;
+import net.pl3x.bukkit.ridables.configuration.mob.ZombieVillagerConfig;
 import net.pl3x.bukkit.ridables.data.Bucket;
 import net.pl3x.bukkit.ridables.entity.ambient.RidableBat;
 import net.pl3x.bukkit.ridables.entity.animal.RidableChicken;
@@ -72,8 +127,9 @@ import net.pl3x.bukkit.ridables.entity.npc.RidableVillager;
 import net.pl3x.bukkit.ridables.util.Logger;
 import net.pl3x.bukkit.ridables.util.RegistryHax;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftEntity;
+import org.bukkit.World;
+import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftEntity;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 
@@ -81,79 +137,101 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.function.Function;
 
 public class RidableType {
-    public final static Map<EntityType, RidableType> BY_BUKKIT_TYPE = Maps.newHashMap();
-    public final static Map<EntityTypes, RidableType> BY_NMS_TYPE = Maps.newHashMap();
+    private final static Map<EntityType, RidableType> BY_BUKKIT_TYPE = Maps.newHashMap();
 
-    public static final RidableType BAT = inject(Config.BAT_ENABLED, "bat", EntityTypes.BAT, RidableBat.class, RidableBat::new);
-    public static final RidableType BLAZE = inject(Config.BLAZE_ENABLED, "blaze", EntityTypes.BLAZE, RidableBlaze.class, RidableBlaze::new);
-    public static final RidableType CAVE_SPIDER = inject(Config.CAVE_SPIDER_ENABLED, "cave_spider", EntityTypes.CAVE_SPIDER, RidableCaveSpider.class, RidableCaveSpider::new);
-    public static final RidableType CHICKEN = inject(Config.CHICKEN_ENABLED, "chicken", EntityTypes.CHICKEN, RidableChicken.class, RidableChicken::new);
-    public static final RidableType COD = inject(Config.COD_ENABLED, "cod", EntityTypes.COD, RidableCod.class, RidableCod::new);
-    public static final RidableType COW = inject(Config.COW_ENABLED, "cow", EntityTypes.COW, RidableCow.class, RidableCow::new);
-    public static final RidableType CREEPER = inject(Config.CREEPER_ENABLED, "creeper", EntityTypes.CREEPER, RidableCreeper.class, RidableCreeper::new);
-    public static final RidableType DOLPHIN = inject(Config.DOLPHIN_ENABLED, "dolphin", EntityTypes.DOLPHIN, RidableDolphin.class, RidableDolphin::new, Bucket.DOLPHIN);
-    public static final RidableType DONKEY = inject(Config.DONKEY_ENABLED, "donkey", EntityTypes.DONKEY, RidableDonkey.class, RidableDonkey::new);
-    public static final RidableType DROWNED = inject(Config.DROWNED_ENABLED, "drowned", EntityTypes.DROWNED, RidableDrowned.class, RidableDrowned::new);
-    public static final RidableType ELDER_GUARDIAN = inject(Config.ELDER_GUARDIAN_ENABLED, "elder_guardian", EntityTypes.ELDER_GUARDIAN, RidableElderGuardian.class, RidableElderGuardian::new, Bucket.ELDER_GUARDIAN);
-    public static final RidableType ENDER_DRAGON = inject(Config.ENDER_DRAGON_ENABLED, "ender_dragon", EntityTypes.ENDER_DRAGON, RidableEnderDragon.class, RidableEnderDragon::new);
-    public static final RidableType ENDERMAN = inject(Config.ENDERMAN_ENABLED, "enderman", EntityTypes.ENDERMAN, RidableEnderman.class, RidableEnderman::new);
-    public static final RidableType ENDERMITE = inject(Config.ENDERMITE_ENABLED, "endermite", EntityTypes.ENDERMITE, RidableEndermite.class, RidableEndermite::new);
-    public static final RidableType EVOKER = inject(Config.EVOKER_ENABLED, "evoker", EntityTypes.EVOKER, RidableEvoker.class, RidableEvoker::new);
-    public static final RidableType GHAST = inject(Config.GHAST_ENABLED, "ghast", EntityTypes.GHAST, RidableGhast.class, RidableGhast::new);
-    public static final RidableType GIANT = inject(Config.GIANT_ENABLED, "giant", EntityTypes.GIANT, RidableGiant.class, RidableGiant::new);
-    public static final RidableType GUARDIAN = inject(Config.GUARDIAN_ENABLED, "guardian", EntityTypes.GUARDIAN, RidableGuardian.class, RidableGuardian::new, Bucket.GUARDIAN);
-    public static final RidableType HORSE = inject(Config.HORSE_ENABLED, "horse", EntityTypes.HORSE, RidableHorse.class, RidableHorse::new);
-    public static final RidableType HUSK = inject(Config.HUSK_ENABLED, "husk", EntityTypes.HUSK, RidableHusk.class, RidableHusk::new);
-    public static final RidableType ILLUSIONER = inject(Config.ILLUSIONER_ENABLED, "illusioner", EntityTypes.ILLUSIONER, RidableIllusioner.class, RidableIllusioner::new);
-    public static final RidableType IRON_GOLEM = inject(Config.IRON_GOLEM_ENABLED, "iron_golem", EntityTypes.IRON_GOLEM, RidableIronGolem.class, RidableIronGolem::new);
-    public static final RidableType LLAMA = inject(Config.LLAMA_ENABLED, "llama", EntityTypes.LLAMA, RidableLlama.class, RidableLlama::new);
-    public static final RidableType MAGMA_CUBE = inject(Config.MAGMA_CUBE_ENABLED, "magma_cube", EntityTypes.MAGMA_CUBE, RidableMagmaCube.class, RidableMagmaCube::new);
-    public static final RidableType MOOSHROOM = inject(Config.MOOSHROOM_ENABLED, "mooshroom", EntityTypes.MOOSHROOM, RidableMooshroom.class, RidableMooshroom::new);
-    public static final RidableType MULE = inject(Config.MULE_ENABLED, "mule", EntityTypes.MULE, RidableMule.class, RidableMule::new);
-    public static final RidableType OCELOT = inject(Config.OCELOT_ENABLED, "ocelot", EntityTypes.OCELOT, RidableOcelot.class, RidableOcelot::new);
-    public static final RidableType PARROT = inject(Config.PARROT_ENABLED, "parrot", EntityTypes.PARROT, RidableParrot.class, RidableParrot::new);
-    public static final RidableType PHANTOM = inject(Config.PHANTOM_ENABLED, "phantom", EntityTypes.PHANTOM, RidablePhantom.class, RidablePhantom::new);
-    public static final RidableType PIG = inject(Config.PIG_ENABLED, "pig", EntityTypes.PIG, RidablePig.class, RidablePig::new);
-    public static final RidableType POLAR_BEAR = inject(Config.POLAR_BEAR_ENABLED, "polar_bear", EntityTypes.POLAR_BEAR, RidablePolarBear.class, RidablePolarBear::new);
-    public static final RidableType PUFFERFISH = inject(Config.PUFFERFISH_ENABLED, "pufferfish", EntityTypes.PUFFERFISH, RidablePufferFish.class, RidablePufferFish::new);
-    public static final RidableType RABBIT = inject(Config.RABBIT_ENABLED, "rabbit", EntityTypes.RABBIT, RidableRabbit.class, RidableRabbit::new);
-    public static final RidableType SALMON = inject(Config.SALMON_ENABLED, "salmon", EntityTypes.SALMON, RidableSalmon.class, RidableSalmon::new);
-    public static final RidableType SHEEP = inject(Config.SHEEP_ENABLED, "sheep", EntityTypes.SHEEP, RidableSheep.class, RidableSheep::new);
-    public static final RidableType SHULKER = inject(Config.SHULKER_ENABLED, "shulker", EntityTypes.SHULKER, RidableShulker.class, RidableShulker::new);
-    public static final RidableType SILVERFISH = inject(Config.SILVERFISH_ENABLED, "silverfish", EntityTypes.SILVERFISH, RidableSilverfish.class, RidableSilverfish::new);
-    public static final RidableType SKELETON = inject(Config.SKELETON_ENABLED, "skeleton", EntityTypes.SKELETON, RidableSkeleton.class, RidableSkeleton::new);
-    public static final RidableType SKELETON_HORSE = inject(Config.SKELETON_HORSE_ENABLED, "skeleton_horse", EntityTypes.SKELETON_HORSE, RidableSkeletonHorse.class, RidableSkeletonHorse::new);
-    public static final RidableType SLIME = inject(Config.SLIME_ENABLED, "slime", EntityTypes.SLIME, RidableSlime.class, RidableSlime::new);
-    public static final RidableType SNOWMAN = inject(Config.SNOW_GOLEM_ENABLED, "snow_golem", EntityTypes.SNOW_GOLEM, RidableSnowGolem.class, RidableSnowGolem::new);
-    public static final RidableType SPIDER = inject(Config.SPIDER_ENABLED, "spider", EntityTypes.SPIDER, RidableSpider.class, RidableSpider::new);
-    public static final RidableType SQUID = inject(Config.SQUID_ENABLED, "squid", EntityTypes.SQUID, RidableSquid.class, RidableSquid::new, Bucket.SQUID);
-    public static final RidableType STRAY = inject(Config.STRAY_ENABLED, "stray", EntityTypes.STRAY, RidableStray.class, RidableStray::new);
-    public static final RidableType TROPICAL_FISH = inject(Config.TROPICAL_FISH_ENABLED, "tropical_fish", EntityTypes.TROPICAL_FISH, RidableTropicalFish.class, RidableTropicalFish::new);
-    public static final RidableType TURTLE = inject(Config.TURTLE_ENABLED, "turtle", EntityTypes.TURTLE, RidableTurtle.class, RidableTurtle::new, Bucket.TURTLE);
-    public static final RidableType VEX = inject(Config.VEX_ENABLED, "vex", EntityTypes.VEX, RidableVex.class, RidableVex::new);
-    public static final RidableType VILLAGER = inject(Config.VILLAGER_ENABLED, "villager", EntityTypes.VILLAGER, RidableVillager.class, RidableVillager::new);
-    public static final RidableType VINDICATOR = inject(Config.VINDICATOR_ENABLED, "vindicator", EntityTypes.VINDICATOR, RidableVindicator.class, RidableVindicator::new);
-    public static final RidableType WITCH = inject(Config.WITCH_ENABLED, "witch", EntityTypes.WITCH, RidableWitch.class, RidableWitch::new);
-    public static final RidableType WITHER = inject(Config.WITHER_ENABLED, "wither", EntityTypes.WITHER, RidableWither.class, RidableWither::new);
-    public static final RidableType WITHER_SKELETON = inject(Config.WITHER_SKELETON_ENABLED, "wither_skeleton", EntityTypes.WITHER_SKELETON, RidableWitherSkeleton.class, RidableWitherSkeleton::new);
-    public static final RidableType WOLF = inject(Config.WOLF_ENABLED, "wolf", EntityTypes.WOLF, RidableWolf.class, RidableWolf::new);
-    public static final RidableType ZOMBIE = inject(Config.ZOMBIE_ENABLED, "zombie", EntityTypes.ZOMBIE, RidableZombie.class, RidableZombie::new);
-    public static final RidableType ZOMBIE_HORSE = inject(Config.ZOMBIE_HORSE_ENABLED, "zombie_horse", EntityTypes.ZOMBIE_HORSE, RidableZombieHorse.class, RidableZombieHorse::new);
-    public static final RidableType ZOMBIE_PIGMAN = inject(Config.ZOMBIE_PIGMAN_ENABLED, "zombie_pigman", EntityTypes.ZOMBIE_PIGMAN, RidableZombiePigman.class, RidableZombiePigman::new);
-    public static final RidableType ZOMBIE_VILLAGER = inject(Config.ZOMBIE_VILLAGER_ENABLED, "zombie_villager", EntityTypes.ZOMBIE_VILLAGER, RidableZombieVillager.class, RidableZombieVillager::new);
+    public static final RidableType BAT = inject("bat", EntityTypes.BAT, RidableBat::new, new BatConfig());
+    public static final RidableType BLAZE = inject("blaze", EntityTypes.BLAZE, RidableBlaze::new, new BlazeConfig());
+    // CAT
+    public static final RidableType CAVE_SPIDER = inject("cave_spider", EntityTypes.CAVE_SPIDER, RidableCaveSpider::new, new CaveSpiderConfig());
+    public static final RidableType CHICKEN = inject("chicken", EntityTypes.CHICKEN, RidableChicken::new, new ChickenConfig());
+    public static final RidableType COD = inject("cod", EntityTypes.COD, RidableCod::new, new CodConfig());
+    public static final RidableType COW = inject("cow", EntityTypes.COW, RidableCow::new, new CowConfig());
+    public static final RidableType CREEPER = inject("creeper", EntityTypes.CREEPER, RidableCreeper::new, new CreeperConfig());
+    public static final RidableType DOLPHIN = inject("dolphin", EntityTypes.DOLPHIN, RidableDolphin::new, new DolphinConfig(), Bucket.DOLPHIN);
+    public static final RidableType DONKEY = inject("donkey", EntityTypes.DONKEY, RidableDonkey::new, new DonkeyConfig());
+    public static final RidableType DROWNED = inject("drowned", EntityTypes.DROWNED, RidableDrowned::new, new DrownedConfig());
+    public static final RidableType ELDER_GUARDIAN = inject("elder_guardian", EntityTypes.ELDER_GUARDIAN, RidableElderGuardian::new, new ElderGuardianConfig(), Bucket.ELDER_GUARDIAN);
+    public static final RidableType ENDER_DRAGON = inject("ender_dragon", EntityTypes.ENDER_DRAGON, RidableEnderDragon::new, new EnderDragonConfig());
+    public static final RidableType ENDERMAN = inject("enderman", EntityTypes.ENDERMAN, RidableEnderman::new, new EndermanConfig());
+    public static final RidableType ENDERMITE = inject("endermite", EntityTypes.ENDERMITE, RidableEndermite::new, new EndermiteConfig());
+    public static final RidableType EVOKER = inject("evoker", EntityTypes.EVOKER, RidableEvoker::new, new EvokerConfig());
+    // FOX
+    public static final RidableType GHAST = inject("ghast", EntityTypes.GHAST, RidableGhast::new, new GhastConfig());
+    public static final RidableType GIANT = inject("giant", EntityTypes.GIANT, RidableGiant::new, new GiantConfig());
+    public static final RidableType GUARDIAN = inject("guardian", EntityTypes.GUARDIAN, RidableGuardian::new, new GuardianConfig(), Bucket.GUARDIAN);
+    public static final RidableType HORSE = inject("horse", EntityTypes.HORSE, RidableHorse::new, new HorseConfig());
+    public static final RidableType HUSK = inject("husk", EntityTypes.HUSK, RidableHusk::new, new HuskConfig());
+    public static final RidableType ILLUSIONER = inject("illusioner", EntityTypes.ILLUSIONER, RidableIllusioner::new, new IllusionerConfig());
+    public static final RidableType IRON_GOLEM = inject("iron_golem", EntityTypes.IRON_GOLEM, RidableIronGolem::new, new IronGolemConfig());
+    public static final RidableType LLAMA = inject("llama", EntityTypes.LLAMA, RidableLlama::new, new LlamaConfig());
+    // LLAMA_TRADER
+    public static final RidableType MAGMA_CUBE = inject("magma_cube", EntityTypes.MAGMA_CUBE, RidableMagmaCube::new, new MagmaCubeConfig());
+    public static final RidableType MOOSHROOM = inject("mooshroom", EntityTypes.MOOSHROOM, RidableMooshroom::new, new MooshroomConfig());
+    public static final RidableType MULE = inject("mule", EntityTypes.MULE, RidableMule::new, new MuleConfig());
+    public static final RidableType OCELOT = inject("ocelot", EntityTypes.OCELOT, RidableOcelot::new, new OcelotConfig());
+    // PANDA
+    public static final RidableType PARROT = inject("parrot", EntityTypes.PARROT, RidableParrot::new, new ParrotConfig());
+    public static final RidableType PHANTOM = inject("phantom", EntityTypes.PHANTOM, RidablePhantom::new, new PhantomConfig());
+    public static final RidableType PIG = inject("pig", EntityTypes.PIG, RidablePig::new, new PigConfig());
+    // PILLAGER
+    public static final RidableType POLAR_BEAR = inject("polar_bear", EntityTypes.POLAR_BEAR, RidablePolarBear::new, new PolarBearConfig());
+    public static final RidableType PUFFERFISH = inject("pufferfish", EntityTypes.PUFFERFISH, RidablePufferFish::new, new PufferfishConfig());
+    public static final RidableType RABBIT = inject("rabbit", EntityTypes.RABBIT, RidableRabbit::new, new RabbitConfig());
+    // RAVAGER
+    public static final RidableType SALMON = inject("salmon", EntityTypes.SALMON, RidableSalmon::new, new SalmonConfig());
+    public static final RidableType SHEEP = inject("sheep", EntityTypes.SHEEP, RidableSheep::new, new SheepConfig());
+    public static final RidableType SHULKER = inject("shulker", EntityTypes.SHULKER, RidableShulker::new, new ShulkerConfig());
+    public static final RidableType SILVERFISH = inject("silverfish", EntityTypes.SILVERFISH, RidableSilverfish::new, new SilverfishConfig());
+    public static final RidableType SKELETON = inject("skeleton", EntityTypes.SKELETON, RidableSkeleton::new, new SkeletonConfig());
+    public static final RidableType SKELETON_HORSE = inject("skeleton_horse", EntityTypes.SKELETON_HORSE, RidableSkeletonHorse::new, new SkeletonHorseConfig());
+    public static final RidableType SLIME = inject("slime", EntityTypes.SLIME, RidableSlime::new, new SlimeConfig());
+    public static final RidableType SNOW_GOLEM = inject("snow_golem", EntityTypes.SNOW_GOLEM, RidableSnowGolem::new, new SnowGolemConfig());
+    public static final RidableType SPIDER = inject("spider", EntityTypes.SPIDER, RidableSpider::new, new SpiderConfig());
+    public static final RidableType SQUID = inject("squid", EntityTypes.SQUID, RidableSquid::new, new SquidConfig(), Bucket.SQUID);
+    public static final RidableType STRAY = inject("stray", EntityTypes.STRAY, RidableStray::new, new StrayConfig());
+    public static final RidableType TROPICAL_FISH = inject("tropical_fish", EntityTypes.TROPICAL_FISH, RidableTropicalFish::new, new TropicalFishConfig());
+    public static final RidableType TURTLE = inject("turtle", EntityTypes.TURTLE, RidableTurtle::new, new TurtleConfig(), Bucket.TURTLE);
+    public static final RidableType VEX = inject("vex", EntityTypes.VEX, RidableVex::new, new VexConfig());
+    public static final RidableType VILLAGER = inject("villager", EntityTypes.VILLAGER, RidableVillager::new, new VillagerConfig());
+    // VILLAGER_TRADER
+    public static final RidableType VINDICATOR = inject("vindicator", EntityTypes.VINDICATOR, RidableVindicator::new, new VindicatorConfig());
+    public static final RidableType WITCH = inject("witch", EntityTypes.WITCH, RidableWitch::new, new WitchConfig());
+    public static final RidableType WITHER = inject("wither", EntityTypes.WITHER, RidableWither::new, new WitherConfig());
+    public static final RidableType WITHER_SKELETON = inject("wither_skeleton", EntityTypes.WITHER_SKELETON, RidableWitherSkeleton::new, new WitherSkeletonConfig());
+    public static final RidableType WOLF = inject("wolf", EntityTypes.WOLF, RidableWolf::new, new WolfConfig());
+    public static final RidableType ZOMBIE = inject("zombie", EntityTypes.ZOMBIE, RidableZombie::new, new ZombieConfig());
+    public static final RidableType ZOMBIE_HORSE = inject("zombie_horse", EntityTypes.ZOMBIE_HORSE, RidableZombieHorse::new, new ZombieHorseConfig());
+    public static final RidableType ZOMBIE_PIGMAN = inject("zombie_pigman", EntityTypes.ZOMBIE_PIGMAN, RidableZombiePigman::new, new ZombiePigmanConfig());
+    public static final RidableType ZOMBIE_VILLAGER = inject("zombie_villager", EntityTypes.ZOMBIE_VILLAGER, RidableZombieVillager::new, new ZombieVillagerConfig());
 
-    public static final IAttribute RIDING_SPEED = (new AttributeRanged(null, "generic.rideSpeed", 1.0D, 0.0D, 1024.0D)).a("Ride Speed").a(true);
-    public static final IAttribute RIDING_MAX_Y = (new AttributeRanged(null, "generic.rideMaxY", 256.0D, 0.0D, 1024.0D)).a("Ride Max Y").a(true);
+    private static RidableType inject(String name, EntityTypes nmsType, EntityTypes.b entityTypes_b, MobConfig config) {
+        return inject(name, nmsType, entityTypes_b, config, null);
+    }
+
+    private static RidableType inject(String name, EntityTypes nmsType, EntityTypes.b entityTypes_b, MobConfig config, Bucket waterBucket) {
+        if (Config.isEnabled(name)) {
+            if (RegistryHax.injectReplacementEntityTypes(nmsType, entityTypes_b)) {
+                Logger.info("Successfully injected replacement entity: &a" + name);
+                RidableType ridableType = new RidableType(name, nmsType, config, waterBucket);
+                //noinspection deprecation
+                BY_BUKKIT_TYPE.put(EntityType.fromName(name), ridableType);
+                return ridableType;
+            }
+            Logger.error("Failed to inject replacement entity: &e" + name);
+        } else {
+            Logger.debug("Skipping disabled entity: &a" + name);
+        }
+        return null;
+    }
 
     /**
      * Get all ridable types that are loaded
      *
      * @return All loaded ridable types
      */
-    public Collection<RidableType> getAllRidableTypes() {
+    public static Collection<RidableType> getAllRidableTypes() {
         return new HashSet<>(BY_BUKKIT_TYPE.values());
     }
 
@@ -166,17 +244,6 @@ public class RidableType {
     @Nullable
     public static RidableType getRidableType(EntityType bukkitType) {
         return BY_BUKKIT_TYPE.get(bukkitType);
-    }
-
-    /**
-     * Get a ridable type from an NMS type
-     *
-     * @param nmsType Entity type
-     * @return RidableType
-     */
-    @Nullable
-    public static RidableType getRidableType(EntityTypes nmsType) {
-        return BY_NMS_TYPE.get(nmsType);
     }
 
     /**
@@ -198,41 +265,20 @@ public class RidableType {
      */
     @Nullable
     public static RidableEntity getRidable(org.bukkit.entity.Entity entity) {
-        net.minecraft.server.v1_13_R2.Entity craftEntity = ((CraftEntity) entity).getHandle();
+        net.minecraft.server.v1_14_R1.Entity craftEntity = ((CraftEntity) entity).getHandle();
         return craftEntity instanceof RidableEntity ? (RidableEntity) craftEntity : null;
     }
 
-    private static RidableType inject(boolean enabled, String name, EntityTypes nmsType, Class<? extends RidableEntity> clazz, Function<? super World, ? extends RidableEntity> function) {
-        return inject(enabled, name, nmsType, clazz, function, null);
-    }
-
-    private static RidableType inject(boolean enabled, String name, EntityTypes nmsType, Class<? extends RidableEntity> clazz, Function<? super World, ? extends RidableEntity> function, Bucket waterBucket) {
-        if (enabled) {
-            if (RegistryHax.injectReplacementEntityTypes(nmsType, clazz, function)) {
-                Logger.info("Successfully injected replacement entity: &a" + name);
-                RidableType ridableType = new RidableType(name, nmsType, clazz, waterBucket);
-                BY_BUKKIT_TYPE.put(EntityType.fromName(name), ridableType);
-                BY_NMS_TYPE.put(nmsType, ridableType);
-                return ridableType;
-            }
-            Logger.error("Failed to inject replacement entity: &e" + name);
-        } else {
-            Logger.warn("Skipping disabled entity: &a" + name);
-        }
-        return null;
-    }
-
     private final EntityTypes<?> entityTypes;
+    private final MobConfig config;
     private final Bucket waterBucket;
     private final String name;
-    private final Class<? extends RidableEntity> clazz;
 
-    private RidableType(String name, EntityTypes<?> entityTypes, Class<? extends RidableEntity> clazz, Bucket waterBucket) {
-        this.entityTypes = entityTypes;
-        this.waterBucket = waterBucket;
+    private RidableType(String name, EntityTypes<?> entityTypes, MobConfig config, Bucket waterBucket) {
         this.name = name;
-        this.clazz = clazz;
-        getConfig(); // force configs to load on startup
+        this.entityTypes = entityTypes;
+        this.config = config;
+        this.waterBucket = waterBucket;
     }
 
     /**
@@ -250,12 +296,7 @@ public class RidableType {
      * @return MobConfig
      */
     public MobConfig getConfig() {
-        try {
-            return (MobConfig) clazz.getDeclaredField("CONFIG").get(null);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return null;
+        return config;
     }
 
     /**
@@ -291,22 +332,8 @@ public class RidableType {
      * @return Entity that was spawned, or null if entity could not be spawned
      */
     @Nullable
-    public Entity spawn(org.bukkit.World world, int x, int y, int z) {
-        return spawn(((CraftWorld) world).getHandle(), x, y, z);
-    }
-
-    /**
-     * Spawn this ridable entity in the world at given coordinates
-     *
-     * @param world World to spawn in
-     * @param x     X coordinate
-     * @param y     Y coordinate
-     * @param z     Z coordinate
-     * @return Entity that was spawned, or null if entity could not be spawned
-     */
-    @Nullable
     public Entity spawn(World world, int x, int y, int z) {
-        return spawn(world, null, null, null, new BlockPosition(x, y, z), true, false);
+        return spawn(world, null, null, null, new BlockPosition(x, y, z), null, true, false);
     }
 
     /**
@@ -322,8 +349,8 @@ public class RidableType {
      * @return Entity that was spawned, or null if entity could not be spawned
      */
     @Nullable
-    public Entity spawn(World world, @Nullable NBTTagCompound nbt, @Nullable IChatBaseComponent name, @Nullable EntityHuman player, BlockPosition pos, boolean center, boolean fixY) {
-        net.minecraft.server.v1_13_R2.Entity nmsEntity = entityTypes.a(world, nbt, name, player, pos, center, fixY); // spawn
+    public Entity spawn(World world, NBTTagCompound nbt, IChatBaseComponent name, EntityHuman player, BlockPosition pos, EnumMobSpawn mobSpawn, boolean center, boolean fixY) {
+        net.minecraft.server.v1_14_R1.Entity nmsEntity = entityTypes.spawnCreature(((CraftWorld) world).getHandle(), nbt, name, player, pos, mobSpawn == null ? EnumMobSpawn.SPAWN_EGG : mobSpawn, center, fixY); // spawn
         return nmsEntity == null ? null : nmsEntity.getBukkitEntity();
     }
 }

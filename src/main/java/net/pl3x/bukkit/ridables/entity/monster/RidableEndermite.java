@@ -1,34 +1,40 @@
 package net.pl3x.bukkit.ridables.entity.monster;
 
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityEndermite;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityEndermite;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.PathfinderGoalFloat;
+import net.minecraft.server.v1_14_R1.PathfinderGoalHurtByTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalLookAtPlayer;
+import net.minecraft.server.v1_14_R1.PathfinderGoalMeleeAttack;
+import net.minecraft.server.v1_14_R1.PathfinderGoalNearestAttackableTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomLookaround;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomStrollLand;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.mob.EndermiteConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASD;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAttackMelee;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAttackNearest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIHurtByTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AILookIdle;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AISwim;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWanderAvoidWater;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWatchClosest;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASD;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 public class RidableEndermite extends EntityEndermite implements RidableEntity {
-    public static final EndermiteConfig CONFIG = new EndermiteConfig();
+    private static EndermiteConfig config;
 
-    public RidableEndermite(World world) {
-        super(world);
+    public RidableEndermite(EntityTypes<? extends EntityEndermite> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new ControllerWASD(this);
         lookController = new LookController(this);
+
+        if (config == null) {
+            config = getConfig();
+        }
     }
 
     @Override
@@ -36,62 +42,97 @@ public class RidableEndermite extends EntityEndermite implements RidableEntity {
         return RidableType.ENDERMITE;
     }
 
-    // canDespawn
     @Override
-    public boolean isTypeNotPersistent() {
-        return !hasCustomName() && !isLeashed();
+    public EndermiteConfig getConfig() {
+        return (EndermiteConfig) getType().getConfig();
     }
 
     @Override
-    protected void initAttributes() {
-        super.initAttributes();
-        getAttributeMap().b(RidableType.RIDING_SPEED); // registerAttribute
-        reloadAttributes();
+    public double getRidingSpeed() {
+        return config.RIDING_SPEED;
     }
 
     @Override
-    public void reloadAttributes() {
-        getAttributeInstance(RidableType.RIDING_SPEED).setValue(CONFIG.RIDING_SPEED);
-        getAttributeInstance(GenericAttributes.maxHealth).setValue(CONFIG.MAX_HEALTH);
-        getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(CONFIG.BASE_SPEED);
-        getAttributeInstance(GenericAttributes.ATTACK_DAMAGE).setValue(CONFIG.AI_MELEE_DAMAGE);
-        getAttributeInstance(GenericAttributes.FOLLOW_RANGE).setValue(CONFIG.AI_FOLLOW_RANGE);
-    }
+    protected void initPathfinder() {
+        goalSelector.a(1, new PathfinderGoalFloat(this));
+        goalSelector.a(2, new PathfinderGoalMeleeAttack(this, 1.0D, false) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
 
-    // initAI - override vanilla AI
-    @Override
-    protected void n() {
-        goalSelector.a(1, new AISwim(this));
-        goalSelector.a(2, new AIAttackMelee(this, 1.0D, false));
-        goalSelector.a(3, new AIWanderAvoidWater(this, 1.0D));
-        goalSelector.a(7, new AIWatchClosest(this, EntityHuman.class, 8.0F));
-        goalSelector.a(8, new AILookIdle(this));
-        targetSelector.a(1, new AIHurtByTarget(this, true));
-        targetSelector.a(2, new AIAttackNearest<>(this, EntityHuman.class, true));
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(3, new PathfinderGoalRandomStrollLand(this, 1.0D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(7, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 8.0F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(8, new PathfinderGoalRandomLookaround(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        targetSelector.a(1, new PathfinderGoalHurtByTarget(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        }.a(new Class[0]));
+        targetSelector.a(2, new PathfinderGoalNearestAttackableTarget<EntityHuman>(this, EntityHuman.class, true) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
     }
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
-        return CONFIG.RIDING_RIDE_IN_WATER;
+    public boolean be() {
+        return config.RIDING_RIDE_IN_WATER;
     }
 
     // getJumpUpwardsMotion
     @Override
-    protected float cG() {
-        return getRider() == null ? CONFIG.AI_JUMP_POWER : CONFIG.RIDING_JUMP_POWER;
+    protected float cW() {
+        return getRider() == null ? super.cW() : config.RIDING_JUMP_POWER;
     }
 
     @Override
     protected void mobTick() {
-        Q = getRider() == null ? CONFIG.AI_STEP_HEIGHT : CONFIG.RIDING_STEP_HEIGHT;
+        K = getRider() == null ? 0.6F : config.RIDING_STEP_HEIGHT;
         super.mobTick();
     }
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 
@@ -102,18 +143,20 @@ public class RidableEndermite extends EntityEndermite implements RidableEntity {
             return true; // handled by vanilla action
         }
         if (hand == EnumHand.MAIN_HAND && !entityhuman.isSneaking() && passengers.isEmpty() && !entityhuman.isPassenger()) {
-            return tryRide(entityhuman, CONFIG.RIDING_SADDLE_REQUIRE, CONFIG.RIDING_SADDLE_CONSUME);
+            return tryRide(entityhuman, config.RIDING_SADDLE_REQUIRE, config.RIDING_SADDLE_CONSUME);
         }
         return false;
     }
 
     @Override
-    public boolean removePassenger(Entity passenger, boolean notCancellable) {
+    public boolean removePassenger(Entity passenger) {
         if (passenger instanceof EntityPlayer && !passengers.isEmpty() && passenger == passengers.get(0)) {
-            if (!new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), notCancellable).callEvent() && !notCancellable) {
+            RidableDismountEvent event = new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), false);
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancellable()) {
                 return false; // cancelled
             }
         }
-        return super.removePassenger(passenger, notCancellable);
+        return super.removePassenger(passenger);
     }
 }

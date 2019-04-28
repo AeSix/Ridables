@@ -1,38 +1,31 @@
 package net.pl3x.bukkit.ridables.entity.monster.skeleton;
 
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityArrow;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityIronGolem;
-import net.minecraft.server.v1_13_R2.EntityLiving;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EntitySkeleton;
-import net.minecraft.server.v1_13_R2.EntitySkeletonAbstract;
-import net.minecraft.server.v1_13_R2.EntityTurtle;
-import net.minecraft.server.v1_13_R2.EntityWolf;
-import net.minecraft.server.v1_13_R2.EnumDifficulty;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.Items;
-import net.minecraft.server.v1_13_R2.MathHelper;
-import net.minecraft.server.v1_13_R2.PathfinderGoalBowShoot;
-import net.minecraft.server.v1_13_R2.PathfinderGoalMeleeAttack;
-import net.minecraft.server.v1_13_R2.SoundEffects;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityArrow;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityIronGolem;
+import net.minecraft.server.v1_14_R1.EntityLiving;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntitySkeleton;
+import net.minecraft.server.v1_14_R1.EntitySkeletonAbstract;
+import net.minecraft.server.v1_14_R1.EntityTurtle;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EntityWolf;
+import net.minecraft.server.v1_14_R1.EnumDifficulty;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.GenericAttributes;
+import net.minecraft.server.v1_14_R1.Items;
+import net.minecraft.server.v1_14_R1.MathHelper;
+import net.minecraft.server.v1_14_R1.PathfinderGoalBowShoot;
+import net.minecraft.server.v1_14_R1.PathfinderGoalMeleeAttack;
+import net.minecraft.server.v1_14_R1.SoundEffects;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.mob.SkeletonConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASD;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAttackNearest;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASD;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.entity.ai.goal.AIAvoidTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIFleeSun;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIHurtByTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AILookIdle;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIRestrictSun;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIShootBow;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWanderAvoidWater;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWatchClosest;
 import net.pl3x.bukkit.ridables.entity.ai.goal.skeleton.AISkeletonMeleeAttack;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
 import org.bukkit.entity.Player;
@@ -45,8 +38,8 @@ public class RidableSkeleton extends EntitySkeleton implements RidableEntity {
 
     private boolean burnInDayLight = true;
 
-    public RidableSkeleton(World world) {
-        super(world);
+    public RidableSkeleton(EntityTypes<? extends EntitySkeleton> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new ControllerWASD(this);
         lookController = new LookController(this);
     }
@@ -96,7 +89,7 @@ public class RidableSkeleton extends EntitySkeleton implements RidableEntity {
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
+    public boolean be() {
         return CONFIG.RIDING_RIDE_IN_WATER;
     }
 
@@ -116,14 +109,14 @@ public class RidableSkeleton extends EntitySkeleton implements RidableEntity {
 
     @Override
     protected void mobTick() {
-        Q = getRider() == null ? CONFIG.AI_STEP_HEIGHT : CONFIG.RIDING_STEP_HEIGHT;
+        K = getRider() == null ? 0.6F : CONFIG.RIDING_STEP_HEIGHT;
         super.mobTick();
     }
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 

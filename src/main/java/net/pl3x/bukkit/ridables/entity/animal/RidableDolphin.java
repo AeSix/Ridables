@@ -1,52 +1,63 @@
 package net.pl3x.bukkit.ridables.entity.animal;
 
-import net.minecraft.server.v1_13_R2.ControllerMove;
-import net.minecraft.server.v1_13_R2.CriterionTriggers;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityDolphin;
-import net.minecraft.server.v1_13_R2.EntityGuardian;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.ItemStack;
-import net.minecraft.server.v1_13_R2.Items;
-import net.minecraft.server.v1_13_R2.MathHelper;
-import net.minecraft.server.v1_13_R2.Particles;
-import net.minecraft.server.v1_13_R2.SoundEffects;
-import net.minecraft.server.v1_13_R2.World;
-import net.minecraft.server.v1_13_R2.WorldServer;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.ControllerMove;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityDolphin;
+import net.minecraft.server.v1_14_R1.EntityGuardian;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityItem;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.EnumItemSlot;
+import net.minecraft.server.v1_14_R1.GenericAttributes;
+import net.minecraft.server.v1_14_R1.ItemStack;
+import net.minecraft.server.v1_14_R1.MathHelper;
+import net.minecraft.server.v1_14_R1.MobEffect;
+import net.minecraft.server.v1_14_R1.MobEffects;
+import net.minecraft.server.v1_14_R1.Particles;
+import net.minecraft.server.v1_14_R1.PathMode;
+import net.minecraft.server.v1_14_R1.PathfinderGoal;
+import net.minecraft.server.v1_14_R1.PathfinderGoalAvoidTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalBreath;
+import net.minecraft.server.v1_14_R1.PathfinderGoalFollowBoat;
+import net.minecraft.server.v1_14_R1.PathfinderGoalHurtByTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalLookAtPlayer;
+import net.minecraft.server.v1_14_R1.PathfinderGoalMeleeAttack;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomLookaround;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomSwim;
+import net.minecraft.server.v1_14_R1.PathfinderGoalWater;
+import net.minecraft.server.v1_14_R1.PathfinderGoalWaterJump;
+import net.minecraft.server.v1_14_R1.PathfinderTargetCondition;
+import net.minecraft.server.v1_14_R1.RandomPositionGenerator;
+import net.minecraft.server.v1_14_R1.SoundEffects;
+import net.minecraft.server.v1_14_R1.TagsFluid;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
+import net.minecraft.server.v1_14_R1.WorldServer;
 import net.pl3x.bukkit.ridables.configuration.Lang;
 import net.pl3x.bukkit.ridables.configuration.mob.DolphinConfig;
-import net.pl3x.bukkit.ridables.data.Bucket;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASDWater;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAttackMelee;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAvoidTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIHurtByTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AILookIdle;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWanderSwim;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWatchClosest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.dolphin.AIDolphinBreath;
-import net.pl3x.bukkit.ridables.entity.ai.goal.dolphin.AIDolphinFindWater;
-import net.pl3x.bukkit.ridables.entity.ai.goal.dolphin.AIDolphinFollowBoat;
-import net.pl3x.bukkit.ridables.entity.ai.goal.dolphin.AIDolphinPlayWithItems;
-import net.pl3x.bukkit.ridables.entity.ai.goal.dolphin.AIDolphinSwimToTreasure;
-import net.pl3x.bukkit.ridables.entity.ai.goal.dolphin.AIDolphinSwimWithPlayer;
-import net.pl3x.bukkit.ridables.entity.ai.goal.dolphin.AIDolphinWaterJump;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASDWater;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.entity.projectile.DolphinSpit;
 import net.pl3x.bukkit.ridables.event.DolphinSpitEvent;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
 import net.pl3x.bukkit.ridables.util.Const;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.util.Vector;
 
+import java.util.EnumSet;
+import java.util.List;
+
 public class RidableDolphin extends EntityDolphin implements RidableEntity {
-    public static final DolphinConfig CONFIG = new DolphinConfig();
+    private static DolphinConfig config;
 
     private int bounceCounter = 0;
     private boolean bounceUp = false;
@@ -54,10 +65,14 @@ public class RidableDolphin extends EntityDolphin implements RidableEntity {
     private boolean dashing = false;
     private int dashCounter = 0;
 
-    public RidableDolphin(World world) {
-        super(world);
+    public RidableDolphin(EntityTypes<? extends EntityDolphin> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new DolphinWASDController(this);
         lookController = new DolphinLookController(this, 10);
+
+        if (config == null) {
+            config = getConfig();
+        }
     }
 
     @Override
@@ -65,60 +80,122 @@ public class RidableDolphin extends EntityDolphin implements RidableEntity {
         return RidableType.DOLPHIN;
     }
 
-    // canDespawn
     @Override
-    public boolean isTypeNotPersistent() {
-        return !hasCustomName() && !isLeashed();
+    public DolphinConfig getConfig() {
+        return (DolphinConfig) getType().getConfig();
     }
 
     @Override
-    protected void initAttributes() {
-        super.initAttributes();
-        getAttributeMap().b(RidableType.RIDING_SPEED); // registerAttribute
-        reloadAttributes();
+    public double getRidingSpeed() {
+        if (dashing) {
+            return config.RIDING_SPEED * config.RIDING_DASH_BOOST;
+        }
+        return config.RIDING_SPEED;
     }
 
     @Override
-    public void reloadAttributes() {
-        getAttributeInstance(RidableType.RIDING_SPEED).setValue(CONFIG.RIDING_SPEED);
-        getAttributeInstance(GenericAttributes.maxHealth).setValue(CONFIG.MAX_HEALTH);
-        getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(CONFIG.BASE_SPEED);
-        getAttributeInstance(GenericAttributes.ATTACK_DAMAGE).setValue(CONFIG.AI_MELEE_DAMAGE);
-        getAttributeInstance(GenericAttributes.FOLLOW_RANGE).setValue(CONFIG.AI_FOLLOW_RANGE);
-    }
+    protected void initPathfinder() {
+        goalSelector.a(0, new PathfinderGoalBreath(this));
+        goalSelector.a(0, new PathfinderGoalWater(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
 
-    // initAI - override vanilla AI
-    @Override
-    protected void n() {
-        goalSelector.a(0, new AIDolphinBreath(this));
-        goalSelector.a(0, new AIDolphinFindWater(this));
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
         goalSelector.a(1, new AIDolphinSwimToTreasure(this));
         goalSelector.a(2, new AIDolphinSwimWithPlayer(this, 4.0D));
-        goalSelector.a(4, new AIWanderSwim(this, 1.0D, 10));
-        goalSelector.a(4, new AILookIdle(this));
-        goalSelector.a(5, new AIWatchClosest(this, EntityHuman.class, 6.0F));
-        goalSelector.a(5, new AIDolphinWaterJump(this, 10));
-        goalSelector.a(6, new AIAttackMelee(this, (double) 1.2F, true));
+        goalSelector.a(4, new PathfinderGoalRandomSwim(this, 1.0D, 10) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(4, new PathfinderGoalRandomLookaround(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(5, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(5, new PathfinderGoalWaterJump(this, 10) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(6, new PathfinderGoalMeleeAttack(this, (double) 1.2F, true) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
         goalSelector.a(8, new AIDolphinPlayWithItems(this));
-        goalSelector.a(8, new AIDolphinFollowBoat(this));
-        goalSelector.a(9, new AIAvoidTarget<>(this, EntityGuardian.class, 8.0F, 1.0D, 1.0D));
-        targetSelector.a(1, new AIHurtByTarget(this, true, EntityGuardian.class));
+        goalSelector.a(8, new PathfinderGoalFollowBoat(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(9, new PathfinderGoalAvoidTarget<EntityGuardian>(this, EntityGuardian.class, 8.0F, 1.0D, 1.0D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        targetSelector.a(1, new PathfinderGoalHurtByTarget(this, EntityGuardian.class) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        }.a(new Class[0]));
     }
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
+    public boolean be() {
         return true;
     }
 
     // canBeRidden
     @Override
     protected boolean n(Entity entity) {
-        return k <= 0; // rideCooldown
+        return j <= 0; // rideCooldown
     }
 
     public boolean nearTargetPos() {
-        return dA();
+        return dX();
     }
 
     @Override
@@ -131,19 +208,21 @@ public class RidableDolphin extends EntityDolphin implements RidableEntity {
             spacebarCooldown--;
         }
         if (dashing) {
-            if (++dashCounter > CONFIG.RIDING_DASH_DURATION) {
+            if (++dashCounter > config.RIDING_DASH_DURATION) {
                 dashCounter = 0;
                 dashing = false;
             }
         }
 
-        if (getRider() != null && getAirTicks() > 150 && isInWater()) {
-            if (CONFIG.RIDING_BUBBLES) {
-                double velocity = motX * motX + motY * motY + motZ * motZ;
+        EntityPlayer rider = getRider();
+        if (rider != null && getAirTicks() > 150 && isInWater()) {
+            Vec3D mot = getMot();
+            if (config.RIDING_BUBBLES) {
+                double velocity = mot.x * mot.x + mot.y * mot.y + mot.z * mot.z;
                 if (velocity > 0.2 || velocity < -0.2) {
                     int i = (int) (velocity * 5);
                     for (int j = 0; j < i; j++) {
-                        ((WorldServer) world).sendParticles(null, Particles.e,
+                        ((WorldServer) world).sendParticles(null, Particles.BUBBLE,
                                 lastX + random.nextFloat() / 2 - 0.25F,
                                 lastY + random.nextFloat() / 2 - 0.25F,
                                 lastZ + random.nextFloat() / 2 - 0.25F,
@@ -152,18 +231,19 @@ public class RidableDolphin extends EntityDolphin implements RidableEntity {
                 }
             }
 
-            motY += 0.005D;
-            if (CONFIG.RIDING_BOUNCE && getRider().bj == 0) {
-                motY += bounceUp ? 0.005D : -0.005D;
+            double y = mot.y + 0.005D;
+            if (config.RIDING_BOUNCE && ControllerWASDWater.getForward(rider) == 0) {
+                y += bounceUp ? 0.005D : -0.005D;
             }
+            setMot(mot.x, y, mot.z);
         }
         super.mobTick();
     }
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 
@@ -177,29 +257,31 @@ public class RidableDolphin extends EntityDolphin implements RidableEntity {
             return true; // handled
         }
         if (hand == EnumHand.MAIN_HAND && !entityhuman.isSneaking() && passengers.isEmpty() && !entityhuman.isPassenger()) {
-            return tryRide(entityhuman, CONFIG.RIDING_SADDLE_REQUIRE, CONFIG.RIDING_SADDLE_CONSUME);
+            return tryRide(entityhuman, config.RIDING_SADDLE_REQUIRE, config.RIDING_SADDLE_CONSUME);
         }
         return false;
     }
 
     @Override
-    public boolean removePassenger(Entity passenger, boolean notCancellable) {
+    public boolean removePassenger(Entity passenger) {
         if (passenger instanceof EntityPlayer && !passengers.isEmpty() && passenger == passengers.get(0)) {
-            if (!new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), notCancellable).callEvent() && !notCancellable) {
+            RidableDismountEvent event = new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), false);
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancellable()) {
                 return false; // cancelled
             }
         }
-        return super.removePassenger(passenger, notCancellable);
+        return super.removePassenger(passenger);
     }
 
     @Override
     public boolean onSpacebar() {
-        if (spacebarCooldown == 0 && CONFIG.RIDING_SPACEBAR_MODE != null) {
+        if (spacebarCooldown == 0 && config.RIDING_SPACEBAR_MODE != null) {
             EntityPlayer rider = getRider();
             if (rider != null) {
-                if (CONFIG.RIDING_SPACEBAR_MODE.equalsIgnoreCase("shoot")) {
+                if (config.RIDING_SPACEBAR_MODE.equalsIgnoreCase("shoot")) {
                     return shoot(rider);
-                } else if (CONFIG.RIDING_SPACEBAR_MODE.equalsIgnoreCase("dash")) {
+                } else if (config.RIDING_SPACEBAR_MODE.equalsIgnoreCase("dash")) {
                     return dash(rider);
                 }
             }
@@ -208,13 +290,13 @@ public class RidableDolphin extends EntityDolphin implements RidableEntity {
     }
 
     public boolean shoot(EntityPlayer rider) {
-        spacebarCooldown = CONFIG.RIDING_SHOOT_COOLDOWN;
+        spacebarCooldown = config.RIDING_SHOOT_COOLDOWN;
         if (rider == null) {
             return false;
         }
 
         CraftPlayer player = rider.getBukkitEntity();
-        if (!player.hasPermission("allow.shoot.dolphin")) {
+        if (!player.hasPermission("ridables.shoot.dolphin")) {
             Lang.send(player, Lang.SHOOT_NO_PERMISSION);
             return false;
         }
@@ -224,9 +306,11 @@ public class RidableDolphin extends EntityDolphin implements RidableEntity {
         Vector target = loc.getDirection().normalize().multiply(10).add(loc.toVector());
 
         DolphinSpit spit = new DolphinSpit(world, this, rider);
-        spit.shoot(target.getX() - locX, target.getY() - locY, target.getZ() - locZ, CONFIG.RIDING_SHOOT_SPEED, 5.0F);
+        spit.shoot(target.getX() - locX, target.getY() - locY, target.getZ() - locZ, config.RIDING_SHOOT_SPEED, 5.0F);
 
-        if (!new DolphinSpitEvent(this, spit).callEvent()) {
+        DolphinSpitEvent event = new DolphinSpitEvent(this, spit);
+        Bukkit.getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
             return false; // cancelled
         }
 
@@ -236,9 +320,9 @@ public class RidableDolphin extends EntityDolphin implements RidableEntity {
     }
 
     public boolean dash(EntityPlayer rider) {
-        spacebarCooldown = CONFIG.RIDING_DASH_COOLDOWN;
+        spacebarCooldown = config.RIDING_DASH_COOLDOWN;
         if (!dashing) {
-            if (rider != null && !rider.getBukkitEntity().hasPermission("allow.special.dolphin")) {
+            if (rider != null && !rider.getBukkitEntity().hasPermission("ridables.special.dolphin")) {
                 return false;
             }
 
@@ -253,31 +337,28 @@ public class RidableDolphin extends EntityDolphin implements RidableEntity {
     class DolphinLookController extends LookController {
         private final int h;
 
-        public DolphinLookController(RidableDolphin dolphin, int var2) {
+        DolphinLookController(RidableDolphin dolphin, int h) {
             super(dolphin);
-            this.h = var2;
+            this.h = h;
         }
 
         @Override
         public void tick() {
             if (d) { // isLooking
                 d = false; // isLooking
-                double x = e - a.locX;
-                double y = f - (a.locY + (double) a.getHeadHeight());
-                double z = g - a.locZ;
-                a.pitch = a(a.pitch, (float) (-(MathHelper.c(y, (double) MathHelper.sqrt(x * x + z * z)) * Const.RAD2DEG)) + 10.0F, c);
-                a.aS = a(a.aS, (float) (MathHelper.c(z, x) * Const.RAD2DEG) - 90.0F + 20.0F, b); // rotationYawHead
+                a.aM = a(a.aM, h() + 20.0F, b);
+                a.pitch = a(a.pitch, g() + 10F, c);
             } else {
-                if (a.getNavigation().p()) { // noPath
+                if (a.getNavigation().n()) { // noPath
                     a.pitch = a(a.pitch, 0.0F, 5.0F);
                 }
-                a.aS = a(a.aS, a.aQ, b); // rotationYawHead
+                a.aM = a(a.aM, a.aK, b); // rotationYawHead
             }
-            float yawDiff = MathHelper.g(a.aS - a.aQ);
-            if (yawDiff < (float) (-h)) {
-                a.aQ -= 4.0F; // renderYawOffset
+            float yawDiff = MathHelper.g(a.aM - a.aK);
+            if (yawDiff < (float) -h) {
+                a.aK -= 4.0F; // renderYawOffset
             } else if (yawDiff > (float) h) {
-                a.aQ += 4.0F; // renderYawOffset
+                a.aK += 4.0F; // renderYawOffset
             }
         }
     }
@@ -285,7 +366,7 @@ public class RidableDolphin extends EntityDolphin implements RidableEntity {
     static class DolphinWASDController extends ControllerWASDWater {
         private final RidableDolphin dolphin;
 
-        public DolphinWASDController(RidableDolphin dolphin) {
+        DolphinWASDController(RidableDolphin dolphin) {
             super(dolphin);
             this.dolphin = dolphin;
         }
@@ -293,30 +374,30 @@ public class RidableDolphin extends EntityDolphin implements RidableEntity {
         @Override
         public void tick() {
             if (dolphin.isInWater()) {
-                dolphin.motY += 0.005D;
+                dolphin.setMot(dolphin.getMot().add(0.0D, 0.005D, 0.0D));
             }
 
-            if (h == ControllerMove.Operation.MOVE_TO && !dolphin.getNavigation().p()) {
+            if (h == ControllerMove.Operation.MOVE_TO && !dolphin.getNavigation().n()) {
                 double x = b - dolphin.locX;
                 double y = c - dolphin.locY;
                 double z = d - dolphin.locZ;
                 double distance = x * x + y * y + z * z;
 
-                if (distance < 2.5E-7D) {
+                if (distance < (double) 0.00000025F) {
                     a.r(0.0F);
                 } else {
-                    float f = (float) (MathHelper.c(z, x) * Const.RAD2DEG) - 90.0F;
+                    float f = (float) (MathHelper.d(z, x) * Const.RAD2DEG) - 90.0F;
 
-                    dolphin.aS = dolphin.aQ = dolphin.yaw = a(dolphin.yaw, f, 10.0F);
+                    dolphin.aM = dolphin.aK = dolphin.yaw = a(dolphin.yaw, f, 10.0F);
                     float speed = (float) (e * dolphin.getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).getValue());
 
                     if (dolphin.isInWater()) {
                         dolphin.o(speed * 0.02F);
-                        float f2 = -((float) (MathHelper.c(y, (double) MathHelper.sqrt(x * x + z * z)) * Const.RAD2DEG));
+                        float f2 = -((float) (MathHelper.d(y, (double) MathHelper.sqrt(x * x + z * z)) * Const.RAD2DEG));
                         f2 = MathHelper.a(MathHelper.g(f2), -85.0F, 85.0F);
                         dolphin.pitch = a(dolphin.pitch, f2, 5.0F);
-                        dolphin.bj = MathHelper.cos(dolphin.pitch * Const.DEG2RAD_FLOAT) * speed;
-                        dolphin.bi = -MathHelper.sin(dolphin.pitch * Const.DEG2RAD_FLOAT) * speed;
+                        dolphin.bd = MathHelper.cos(dolphin.pitch * Const.DEG2RAD_FLOAT) * speed;
+                        dolphin.bc = -MathHelper.sin(dolphin.pitch * Const.DEG2RAD_FLOAT) * speed;
                     } else {
                         dolphin.o(speed * 0.1F);
                     }
@@ -326,6 +407,237 @@ public class RidableDolphin extends EntityDolphin implements RidableEntity {
                 dolphin.t(0.0F);
                 dolphin.s(0.0F);
                 dolphin.r(0.0F);
+            }
+        }
+    }
+
+    static class AIDolphinPlayWithItems extends PathfinderGoal {
+        private final RidableDolphin dolphin;
+        private int delay;
+
+        AIDolphinPlayWithItems(RidableDolphin dolphin) {
+            this.dolphin = dolphin;
+        }
+
+        // shouldExecute
+        @Override
+        public boolean a() {
+            if (delay > dolphin.ticksLived) {
+                return false;
+            }
+            if (dolphin.getRider() != null) {
+                return false;
+            }
+            List items = dolphin.world.a(EntityItem.class, dolphin.getBoundingBox().grow(8.0D, 8.0D, 8.0D), EntityDolphin.b);
+            return !items.isEmpty() || !dolphin.getEquipment(EnumItemSlot.MAINHAND).isEmpty();
+        }
+
+        // shouldContinueExecuting
+        @Override
+        public boolean b() {
+            return a();
+        }
+
+        // startExecuting
+        @Override
+        public void c() {
+            List items = dolphin.world.a(EntityItem.class, dolphin.getBoundingBox().grow(8.0D, 8.0D, 8.0D), EntityDolphin.b);
+            if (!items.isEmpty()) {
+                dolphin.getNavigation().a((Entity) items.get(0), (double) 1.2F);
+                dolphin.a(SoundEffects.ENTITY_DOLPHIN_PLAY, 1.0F, 1.0F);
+            }
+            delay = 0;
+        }
+
+        // resetTask
+        @Override
+        public void d() {
+            ItemStack stack = dolphin.getEquipment(EnumItemSlot.MAINHAND);
+            if (!stack.isEmpty()) {
+                throwItem(stack);
+                dolphin.setSlot(EnumItemSlot.MAINHAND, ItemStack.a);
+                delay = dolphin.ticksLived + dolphin.getRandom().nextInt(100);
+            }
+        }
+
+        // tick
+        @Override
+        public void e() {
+            List items = dolphin.world.a(EntityItem.class, dolphin.getBoundingBox().grow(8.0D, 8.0D, 8.0D), EntityDolphin.b);
+            ItemStack stack = dolphin.getEquipment(EnumItemSlot.MAINHAND);
+            if (!stack.isEmpty()) {
+                throwItem(stack);
+                dolphin.setSlot(EnumItemSlot.MAINHAND, ItemStack.a);
+            } else if (!items.isEmpty()) {
+                dolphin.getNavigation().a((Entity) items.get(0), (double) 1.2F);
+            }
+        }
+
+        private void throwItem(ItemStack stack) {
+            if (!stack.isEmpty()) {
+                double d0 = dolphin.locY - (double) 0.3F + (double) dolphin.getHeadHeight();
+                EntityItem entityitem = new EntityItem(dolphin.world, dolphin.locX, d0, dolphin.locZ, stack);
+
+                entityitem.setPickupDelay(40);
+                entityitem.setThrower(dolphin.getUniqueID());
+
+                float f1 = dolphin.getRandom().nextFloat() * Const.TWOPI_FLOAT;
+                float f2 = 0.02F * dolphin.getRandom().nextFloat();
+
+                entityitem.setMot(
+                        (double) (0.3F * -MathHelper.sin(dolphin.yaw * Const.DEG2RAD_FLOAT) * MathHelper.cos(dolphin.pitch * Const.DEG2RAD_FLOAT) + MathHelper.cos(f1) * f2),
+                        (double) (0.3F * MathHelper.sin(dolphin.pitch * Const.DEG2RAD_FLOAT) * 1.5F),
+                        (double) (0.3F * MathHelper.cos(dolphin.yaw * Const.DEG2RAD_FLOAT) * MathHelper.cos(dolphin.pitch * Const.DEG2RAD_FLOAT) + MathHelper.sin(f1) * f2));
+
+                dolphin.world.addEntity(entityitem);
+            }
+        }
+    }
+
+    static class AIDolphinSwimToTreasure extends PathfinderGoal {
+        private final RidableDolphin dolphin;
+        private boolean notFound;
+
+        AIDolphinSwimToTreasure(RidableDolphin dolphin) {
+            this.dolphin = dolphin;
+            this.a(EnumSet.of(PathfinderGoal.Type.MOVE, PathfinderGoal.Type.LOOK)); // setMutexBits
+        }
+
+        // isInterruptible
+        @Override
+        public boolean C_() {
+            return dolphin.getRider() != null;
+        }
+
+        // shouldExecute
+        @Override
+        public boolean a() {
+            return dolphin.getRider() == null && dolphin.dV() && dolphin.getAirTicks() >= 100;
+        }
+
+        // shouldContinueExecuting
+        @Override
+        public boolean b() {
+            if (dolphin.getRider() != null) {
+                return false;
+            }
+            BlockPosition treasure = dolphin.l(); // getTreasurePos
+            return !notFound && dolphin.getAirTicks() >= 100 && !(new BlockPosition(treasure.getX(), dolphin.locY, treasure.getZ())).a(dolphin.ch(), 4.0D);
+        }
+
+        // startExecuting
+        @Override
+        public void c() {
+            notFound = false;
+            dolphin.getNavigation().o();
+            World world = dolphin.world;
+            BlockPosition pos = new BlockPosition(dolphin);
+            String structureName = (double) world.random.nextFloat() >= 0.5D ? "Ocean_Ruin" : "Shipwreck";
+            BlockPosition pos1 = world.a(structureName, pos, 50, false); // findNearestStructure
+            if (pos1 == null) {
+                BlockPosition pos2 = world.a(structureName.equals("Ocean_Ruin") ? "Shipwreck" : "Ocean_Ruin", pos, 50, false); // findNearestStructure
+                if (pos2 == null) {
+                    notFound = true;
+                    return;
+                }
+                dolphin.g(pos2); // setTreasurePos
+            } else {
+                dolphin.g(pos1); // setTreasurePos
+            }
+            world.broadcastEntityEffect(dolphin, (byte) 38);
+        }
+
+        // resetTask
+        @Override
+        public void d() {
+            BlockPosition pos = dolphin.l(); // getTreasurePos
+            if ((new BlockPosition((double) pos.getX(), dolphin.locY, (double) pos.getZ())).a(dolphin.ch(), 4.0D) || notFound) {
+                dolphin.r(false); // setGotFish
+            }
+        }
+
+        // tick
+        @Override
+        public void e() {
+            BlockPosition pos = dolphin.l(); // getTreasurePos
+            if (dolphin.nearTargetPos() || dolphin.getNavigation().n()) {
+                Vec3D vec3d = RandomPositionGenerator.a(dolphin, 16, 1, new Vec3D((double) pos.getX(), (double) pos.getY(), (double) pos.getZ()), (double) (Const.PI_FLOAT / 8F));
+                if (vec3d == null) {
+                    vec3d = RandomPositionGenerator.a(dolphin, 8, 4, new Vec3D((double) pos.getX(), (double) pos.getY(), (double) pos.getZ()));
+                }
+                if (vec3d != null) {
+                    BlockPosition pos1 = new BlockPosition(vec3d);
+                    if (!dolphin.world.getFluid(pos1).a(TagsFluid.WATER) || !dolphin.world.getType(pos1).a(dolphin.world, pos1, PathMode.WATER)) {
+                        vec3d = RandomPositionGenerator.a(dolphin, 8, 5, new Vec3D((double) pos.getX(), (double) pos.getY(), (double) pos.getZ()));
+                    }
+                }
+                if (vec3d == null) {
+                    notFound = true;
+                    return;
+                }
+                dolphin.getControllerLook().a(vec3d.x, vec3d.y, vec3d.z, (float) (dolphin.dA() + 20), (float) dolphin.M());
+                dolphin.getNavigation().a(vec3d.x, vec3d.y, vec3d.z, 1.3D);
+                if (dolphin.world.random.nextInt(80) == 0) {
+                    dolphin.world.broadcastEntityEffect(dolphin, (byte) 38);
+                }
+            }
+        }
+    }
+
+    static class AIDolphinSwimWithPlayer extends PathfinderGoal {
+        private final RidableDolphin dolphin;
+        private final double speed;
+        private EntityHuman targetPlayer;
+
+        AIDolphinSwimWithPlayer(RidableDolphin dolphin, double speed) {
+            this.dolphin = dolphin;
+            this.speed = speed;
+            this.a(EnumSet.of(PathfinderGoal.Type.MOVE, PathfinderGoal.Type.LOOK)); // setMutexBits
+        }
+
+        // from EntityDolphin
+        private static final PathfinderTargetCondition CONDITION = (new PathfinderTargetCondition()).a(10.0D).b().a();
+
+        // shouldExecute
+        @Override
+        public boolean a() {
+            if (dolphin.getRider() != null) {
+                return false;
+            }
+            targetPlayer = dolphin.world.a(CONDITION, dolphin);
+            return targetPlayer != null && targetPlayer.isSwimming();
+        }
+
+        // shouldContinueExecuting
+        @Override
+        public boolean b() {
+            return dolphin.getRider() == null && targetPlayer != null && targetPlayer.isSwimming() && dolphin.h(targetPlayer) < 256.0D;
+        }
+
+        // startExecuting
+        @Override
+        public void c() {
+            targetPlayer.addEffect(new MobEffect(MobEffects.DOLPHINS_GRACE, 100), EntityPotionEffectEvent.Cause.DOLPHIN);
+        }
+
+        // resetTask
+        @Override
+        public void d() {
+            targetPlayer = null;
+            dolphin.getNavigation().o(); // clearPath
+        }
+
+        // tick
+        @Override
+        public void e() {
+            dolphin.getControllerLook().a(targetPlayer, (float) (dolphin.dA() + 20), (float) dolphin.M()); // setLookPositionWithEntity
+            if (dolphin.h(targetPlayer) < 6.25D) {
+                dolphin.getNavigation().o(); // clearPath
+            } else {
+                dolphin.getNavigation().a(targetPlayer, speed); // tryMovingToEntityLiving
+            }
+            if (targetPlayer.isSwimming() && targetPlayer.world.random.nextInt(6) == 0) {
+                targetPlayer.addEffect(new MobEffect(MobEffects.DOLPHINS_GRACE, 100), EntityPotionEffectEvent.Cause.DOLPHIN);
             }
         }
     }

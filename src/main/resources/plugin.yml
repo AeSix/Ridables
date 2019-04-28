@@ -1,263 +1,271 @@
 name: "${project.artifactId}"
 main: "${project.groupId}.${project.artifactId}"
 version: "${project.version}"
-description: "${project.artifactId} CraftBukkit/Spigot/Paper Plugin"
+description: "Ride and control any mob"
 author: "BillyGalbreath"
-api-version: 1.13
-softdepend:
-- PlugMan
+api-version: "1.13"
 
 commands:
   ridables:
     description: Reload config
     usage: /<command> reload
     aliases:
-    - rideables
-    - rideable
-    - ridable
+      - rideables
+      - rideable
+      - ridable
 
 permissions:
-  allow.collect.*:
-    description: Allow to collect all supported creatures in water buckets
-    default: op
+  ridables.*:
+    description: Gives every permission
     children:
-      allow.collect.dolphin:
-        description: Allow to collect dolphins in water buckets
-        default: op
-      allow.collect.squid:
-        description: Allow to collect squids in water buckets
-        default: op
-      allow.collect.turtle:
-        description: Allow to collect turtles in water buckets
-        default: op
-  allow.powered.creeper:
-    description: Allow to toggle creeper powered state
-    default: op
-  allow.ride.*:
-    description: Allow to ride all supported creatures
-    default: op
-    children:
-      allow.ride.bat:
-        description: Allow to ride bats
-        default: op
-      allow.ride.blaze:
-        description: Allow to ride blazes
-        default: op
-      allow.ride.cave_spider:
-        description: Allow to ride cave spiders
-        default: op
-      allow.ride.chicken:
-        description: Allow to ride chickens
-        default: op
-      allow.ride.cod:
-        description: Allow to ride cod fish
-        default: op
-      allow.ride.cow:
-        description: Allow to ride cows
-        default: op
-      allow.ride.creeper:
-        description: Allow to ride creepers
-        default: op
-      allow.ride.dolphin:
-        description: Allow to ride dolphins
-        default: op
-      allow.ride.drowned:
-        description: Allow to ride drowned
-        default: op
-      allow.ride.elder_guardian:
-        description: Allow to ride elder guardians
-        default: op
-      allow.ride.ender_dragon:
-        description: Allow to ride ender dragon
-        default: op
-      allow.ride.enderman:
-        description: Allow to ride endermen
-        default: op
-      allow.ride.endermite:
-        description: Allow to ride endermites
-        default: op
-      allow.ride.evoker:
-        description: Allow to ride evokers
-        default: op
-      allow.ride.ghast:
-        description: Allow to ride ghast
-        default: op
-      allow.ride.giant:
-        description: Allow to ride giants
-        default: op
-      allow.ride.guardian:
-        description: Allow to ride guardians
-        default: op
-      allow.ride.husk:
-        description: Allow to ride husks
-        default: op
-      allow.ride.illusioner:
-        description: Allow to ride illusioners
-        default: op
-      allow.ride.iron_golem:
-        description: Allow to ride iron golems
-        default: op
-      allow.ride.llama:
-        description: Allow to ride llamas
-        default: op
-      allow.ride.magma_cube:
-        description: Allow to ride magma cubes
-        default: op
-      allow.ride.mooshroom:
-        description: Allow to ride mooshrooms
-        default: op
-      allow.ride.ocelot:
-        description: Allow to ride tamed ocelots
-        default: op
-      allow.ride.parrot:
-        description: Allow to ride parrots
-        default: op
-      allow.ride.phantom:
-        description: Allow to ride phantoms
-        default: op
-      allow.ride.pig:
-        description: Allow to ride pigs
-        default: op
-      allow.ride.polar_bear:
-        description: Allow to ride polar bears
-        default: op
-      allow.ride.pufferfish:
-        description: Allow to ride pufferfish
-        default: op
-      allow.ride.rabbit:
-        description: Allow to ride rabbits
-        default: op
-      allow.ride.salmon:
-        description: Allow to ride salmon
-        default: op
-      allow.ride.sheep:
-        description: Allow to ride sheep
-        default: op
-      allow.ride.shulker:
-        description: Allow to ride shulkers
-        default: op
-      allow.ride.silverfish:
-        description: Allow to ride silverfish
-        default: op
-      allow.ride.skeleton:
-        description: Allow to ride skeletons
-        default: op
-      allow.ride.skeleton_horse:
-        description: Allow to ride skeleton horses
-        default: op
-      allow.ride.slime:
-        description: Allow to ride slimes
-        default: op
-      allow.ride.snow_golem:
-        description: Allow to ride snowman
-        default: op
-      allow.ride.spider:
-        description: Allow to ride spiders
-        default: op
-      allow.ride.squid:
-        description: Allow to ride squids
-        default: op
-      allow.ride.stray:
-        description: Allow to ride strays
-        default: op
-      allow.ride.tropical_fish:
-        description: Allow to ride tropical fish
-        default: op
-      allow.ride.turtle:
-        description: Allow to ride turtles
-        default: op
-      allow.ride.vex:
-        description: Allow to ride vex
-        default: op
-      allow.ride.villager:
-        description: Allow to ride villagers
-        default: op
-      allow.ride.vindicator:
-        description: Allow to ride vindicators
-        default: op
-      allow.ride.witch:
-        description: Allow to ride witches
-        default: op
-      allow.ride.wither:
-        description: Allow to ride withers
-        default: op
-      allow.ride.wither_skeleton:
-        description: Allow to ride wither skeletons
-        default: op
-      allow.ride.wolf:
-        description: Allow to ride tamed wolves
-        default: op
-      allow.ride.zombie:
-        description: Allow to ride zombies
-        default: op
-      allow.ride.zombie_horse:
-        description: Allow to ride zombie horses
-        default: op
-      allow.ride.zombie_pigman:
-        description: Allow to ride zombie pigman
-        default: op
-      allow.ride.zombie_villager:
-        description: Allow to ride zombie villagers
-        default: op
-  allow.shoot.*:
-    description: Allow to make all supported creatures shoot
-    default: op
-    children:
-      allow.shoot.blaze:
-        description: Allow to make blazes shoot fireballs
-        default: op
-      allow.shoot.dolphin:
-        description: Allow to make dolphins shoot spit
-        default: op
-      allow.shoot.drowned:
-        description: Allow to make drownedd throw tridents
-        default: op
-      allow.shoot.ghast:
-        description: Allow to make ghasts shoot fireballs
-        default: op
-      allow.shoot.phantom:
-        description: Allow to make phantoms shoot flames
-        default: op
-      allow.shoot.shulker:
-        description: Allow to make withers shoot shulker bullets
-        default: op
-      allow.shoot.snow_golem:
-        description: Allow to make snow golems shoot snowballs
-        default: op
-      allow.shoot.spider:
-        description: Allow to make spiders shoot cob webs
-        default: op
-      allow.shoot.witch:
-        description: Allow to make witches throw potions of harming
-        default: op
-      allow.shoot.wither:
-        description: Allow to make withers shoot skulls
-        default: op
-  allow.special.*:
-    description: Allow to make all supported creatures do their special
-    default: op
-    children:
-      allow.special.creeper:
-        description: Allow to make creepers ignite
-        default: op
-      allow.special.dolphin:
-        description: Allow to make dolphins dash
-        default: op
-      allow.special.enderman:
-        description: Allow to make endermen pick up and place blocks
-        default: op
-      allow.special.evoker:
-        description: Allow to make evokers cast fangs spell
-        default: op
-      allow.special.magma_cube:
-        description: Allow to make magma cubes jump higher
-        default: op
-      allow.special.slime:
-        description: Allow to make slimes jump higher
-        default: op
-      allow.special.squid:
-        description: Allow to make squids squirt ink
-        default: op
-  command.ridables:
-    description: Allow to reload config
-    default: op
+      ridables.ride.*:
+        description: Allows to ride every ridable mob
+        children:
+          ridables.ride.bat:
+            description: Allows to ride ridable bats
+            default: op
+          ridables.ride.blaze:
+            description: Allow to ride blazes
+            default: op
+          ridables.ride.cave_spider:
+            description: Allow to ride cave spiders
+            default: op
+          ridables.ride.chicken:
+            description: Allow to ride chickens
+            default: op
+          ridables.ride.cod:
+            description: Allow to ride cod fish
+            default: op
+          ridables.ride.cow:
+            description: Allow to ride cows
+            default: op
+          ridables.ride.creeper:
+            description: Allow to ride creepers
+            default: op
+          ridables.ride.dolphin:
+            description: Allow to ride dolphins
+            default: op
+          ridables.ride.drowned:
+            description: Allow to ride drowned
+            default: op
+          ridables.ride.elder_guardian:
+            description: Allow to ride elder guardians
+            default: op
+          ridables.ride.ender_dragon:
+            description: Allow to ride ender dragon
+            default: op
+          ridables.ride.enderman:
+            description: Allow to ride endermen
+            default: op
+          ridables.ride.endermite:
+            description: Allow to ride endermites
+            default: op
+          ridables.ride.evoker:
+            description: Allow to ride evokers
+            default: op
+          ridables.ride.ghast:
+            description: Allow to ride ghast
+            default: op
+          ridables.ride.giant:
+            description: Allow to ride giants
+            default: op
+          ridables.ride.guardian:
+            description: Allow to ride guardians
+            default: op
+          ridables.ride.husk:
+            description: Allow to ride husks
+            default: op
+          ridables.ride.illusioner:
+            description: Allow to ride illusioners
+            default: op
+          ridables.ride.iron_golem:
+            description: Allow to ride iron golems
+            default: op
+          ridables.ride.llama:
+            description: Allow to ride llamas
+            default: op
+          ridables.ride.magma_cube:
+            description: Allow to ride magma cubes
+            default: op
+          ridables.ride.mooshroom:
+            description: Allow to ride mooshrooms
+            default: op
+          ridables.ride.ocelot:
+            description: Allow to ride tamed ocelots
+            default: op
+          ridables.ride.parrot:
+            description: Allow to ride parrots
+            default: op
+          ridables.ride.phantom:
+            description: Allow to ride phantoms
+            default: op
+          ridables.ride.pig:
+            description: Allow to ride pigs
+            default: op
+          ridables.ride.polar_bear:
+            description: Allow to ride polar bears
+            default: op
+          ridables.ride.pufferfish:
+            description: Allow to ride pufferfish
+            default: op
+          ridables.ride.rabbit:
+            description: Allow to ride rabbits
+            default: op
+          ridables.ride.salmon:
+            description: Allow to ride salmon
+            default: op
+          ridables.ride.sheep:
+            description: Allow to ride sheep
+            default: op
+          ridables.ride.shulker:
+            description: Allow to ride shulkers
+            default: op
+          ridables.ride.silverfish:
+            description: Allow to ride silverfish
+            default: op
+          ridables.ride.skeleton:
+            description: Allow to ride skeletons
+            default: op
+          ridables.ride.skeleton_horse:
+            description: Allow to ride skeleton horses
+            default: op
+          ridables.ride.slime:
+            description: Allow to ride slimes
+            default: op
+          ridables.ride.snow_golem:
+            description: Allow to ride snowman
+            default: op
+          ridables.ride.spider:
+            description: Allow to ride spiders
+            default: op
+          ridables.ride.squid:
+            description: Allow to ride squids
+            default: op
+          ridables.ride.stray:
+            description: Allow to ride strays
+            default: op
+          ridables.ride.tropical_fish:
+            description: Allow to ride tropical fish
+            default: op
+          ridables.ride.turtle:
+            description: Allow to ride turtles
+            default: op
+          ridables.ride.vex:
+            description: Allow to ride vex
+            default: op
+          ridables.ride.villager:
+            description: Allow to ride villagers
+            default: op
+          ridables.ride.vindicator:
+            description: Allow to ride vindicators
+            default: op
+          ridables.ride.witch:
+            description: Allow to ride witches
+            default: op
+          ridables.ride.wither:
+            description: Allow to ride withers
+            default: op
+          ridables.ride.wither_skeleton:
+            description: Allow to ride wither skeletons
+            default: op
+          ridables.ride.wolf:
+            description: Allow to ride tamed wolves
+            default: op
+          ridables.ride.zombie:
+            description: Allow to ride zombies
+            default: op
+          ridables.ride.zombie_horse:
+            description: Allow to ride zombie horses
+            default: op
+          ridables.ride.zombie_pigman:
+            description: Allow to ride zombie pigman
+            default: op
+          ridables.ride.zombie_villager:
+            description: Allow to ride zombie villagers
+            default: op
+      ridables.shoot.*:
+        description: Allows to make all ridables shoot
+        default: op
+        children:
+          ridables.shoot.blaze:
+            description: Allows to make blazes shoot fireballs
+            default: op
+          ridables.shoot.dolphin:
+            description: Allows to make dolphins shoot spit
+            default: op
+          ridables.shoot.drowned:
+            description: Allows to make drownedd throw tridents
+            default: op
+          ridables.shoot.ghast:
+            description: Allows to make ghasts shoot fireballs
+            default: op
+          ridables.shoot.phantom:
+            description: Allows to make phantoms shoot flames
+            default: op
+          ridables.shoot.shulker:
+            description: Allows to make withers shoot shulker bullets
+            default: op
+          ridables.shoot.snow_golem:
+            description: Allows to make snow golems shoot snowballs
+            default: op
+          ridables.shoot.spider:
+            description: Allows to make spiders shoot cob webs
+            default: op
+          ridables.shoot.witch:
+            description: Allows to make witches throw potions of harming
+            default: op
+          ridables.shoot.wither:
+            description: Allows to make withers shoot skulls
+            default: op
+      ridables.special.*:
+        description: Allows to make all supported creatures do their special
+        default: op
+        children:
+          ridables.special.creeper:
+            description:  Allows to use all special creeper abilities
+            default: op
+            children:
+              ridables.special.creeper.ignite:
+                description: Allows to make creepers ignite
+                default: op
+              ridables.special.creeper.powered:
+                description: Allows to toggle creeper powered state
+                default: op
+          ridables.special.dolphin:
+            description: Allows to make dolphins dash
+            default: op
+          ridables.special.enderman:
+            description: Allows to make endermen pick up and place blocks
+            default: op
+          ridables.special.evoker:
+            description: Allows to make evokers cast fangs spell
+            default: op
+          ridables.special.magma_cube:
+            description: Allows to make magma cubes jump higher
+            default: op
+          ridables.special.slime:
+            description: Allows to make slimes jump higher
+            default: op
+          ridables.special.squid:
+            description: Allows to make squids squirt ink
+            default: op
+      ridables.collect.*:
+        description: Allows to collect all ridables in water buckets
+        default: op
+        children:
+          ridables.collect.dolphin:
+            description: Allows to collect dolphins in water buckets
+            default: op
+          ridables.collect.squid:
+            description: Allows to collect squids in water buckets
+            default: op
+          ridables.collect.turtle:
+            description: Allows to collect turtles in water buckets
+            default: op
+      ridables.command.*:
+        description: Allows to use all commands
+        default: op
+        children:
+          ridables.command.ridables:
+            description: Allows to reload config
+            default: op

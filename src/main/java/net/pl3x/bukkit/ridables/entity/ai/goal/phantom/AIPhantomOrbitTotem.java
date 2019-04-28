@@ -1,7 +1,7 @@
 package net.pl3x.bukkit.ridables.entity.ai.goal.phantom;
 
-import net.minecraft.server.v1_13_R2.MathHelper;
-import net.minecraft.server.v1_13_R2.Vec3D;
+import net.minecraft.server.v1_14_R1.MathHelper;
+import net.minecraft.server.v1_14_R1.Vec3D;
 import net.pl3x.bukkit.ridables.entity.monster.RidablePhantom;
 import net.pl3x.bukkit.ridables.util.Const;
 

@@ -1,6 +1,6 @@
 package net.pl3x.bukkit.ridables.entity.ai.goal.shulker;
 
-import net.minecraft.server.v1_13_R2.PathfinderGoal;
+import net.minecraft.server.v1_14_R1.PathfinderGoal;
 import net.pl3x.bukkit.ridables.entity.monster.RidableShulker;
 
 public class AIShulkerPeek extends PathfinderGoal {

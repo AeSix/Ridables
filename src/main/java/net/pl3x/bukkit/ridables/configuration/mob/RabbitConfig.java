@@ -9,7 +9,7 @@ public class RabbitConfig extends MobConfig {
     public float AI_JUMP_POWER = 0.5F;
     public double AI_FOLLOW_RANGE = 16.0D;
     public float AI_MELEE_DAMAGE = 3.0F;
-    public double AI_TOAST_CHANCE = 0.0D;
+    public double TOAST_CHANCE = 0.0D;
     public double AI_KILLER_CHANCE = 0.0D;
     public double AI_KILLER_ARMOR = 8.0D;
     public float AI_KILLER_DAMAGE = 8.0F;
@@ -38,7 +38,7 @@ public class RabbitConfig extends MobConfig {
             addDefault("ai.jump-power", AI_JUMP_POWER);
             addDefault("ai.follow-range", AI_FOLLOW_RANGE);
             addDefault("ai.melee-damage", AI_MELEE_DAMAGE);
-            addDefault("ai.toast.chance", AI_TOAST_CHANCE);
+            addDefault("ai.toast.chance", TOAST_CHANCE);
             addDefault("ai.killer.chance", AI_KILLER_CHANCE);
             addDefault("ai.killer.armor", AI_KILLER_ARMOR);
             addDefault("ai.killer.damage", AI_KILLER_DAMAGE);
@@ -55,7 +55,7 @@ public class RabbitConfig extends MobConfig {
         AI_JUMP_POWER = (float) getDouble("ai.jump-power");
         AI_FOLLOW_RANGE = getDouble("ai.follow-range");
         AI_MELEE_DAMAGE = (float) getDouble("ai.melee-damage");
-        AI_TOAST_CHANCE = getDouble("ai.toast.chance");
+        TOAST_CHANCE = getDouble("ai.toast.chance");
         AI_KILLER_CHANCE = getDouble("ai.killer.chance");
         AI_KILLER_ARMOR = getDouble("ai.killer.armor");
         AI_KILLER_DAMAGE = (float) getDouble("ai.killer.damage");

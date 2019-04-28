@@ -1,6 +1,6 @@
 package net.pl3x.bukkit.ridables.command;
 
-import net.minecraft.server.v1_13_R2.Entity;
+import net.minecraft.server.v1_14_R1.Entity;
 import net.pl3x.bukkit.ridables.Ridables;
 import net.pl3x.bukkit.ridables.configuration.Config;
 import net.pl3x.bukkit.ridables.configuration.Lang;
@@ -11,7 +11,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftEntity;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,6 +25,7 @@ public class CmdRidables implements TabExecutor {
     }
 
     @Override
+    @SuppressWarnings("NullableProblems")
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 1) {
             return Stream.of("reload")
@@ -35,8 +36,9 @@ public class CmdRidables implements TabExecutor {
     }
 
     @Override
+    @SuppressWarnings("NullableProblems")
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!sender.hasPermission("command.ridables")) {
+        if (!sender.hasPermission("ridables.command.ridables")) {
             Logger.debug("Perm Check: " + sender.getName() + " does NOT have permission for /ridables command");
             Lang.send(sender, Lang.COMMAND_NO_PERMISSION);
             return true;
@@ -50,7 +52,7 @@ public class CmdRidables implements TabExecutor {
             Lang.reload();
 
             Lang.send(sender, Lang.RELOADING_MOB_CONFIGS);
-            RidableType.BY_BUKKIT_TYPE.forEach((bukkit, ridable) -> {
+            RidableType.getAllRidableTypes().forEach(ridable -> {
                 if (ridable.getConfig() != null) {
                     ridable.getConfig().reload();
                 }
@@ -60,7 +62,7 @@ public class CmdRidables implements TabExecutor {
             Bukkit.getWorlds().forEach(world -> world.getEntities().forEach(entity -> {
                 Entity nmsEntity = ((CraftEntity) entity).getHandle();
                 if (nmsEntity instanceof RidableEntity) {
-                    ((RidableEntity) nmsEntity).reloadAttributes();
+                    ((RidableEntity) nmsEntity).reloadAttributes(); // TODO
                 }
             }));
 

@@ -1,59 +1,53 @@
 package net.pl3x.bukkit.ridables.entity.animal;
 
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityChicken;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityOcelot;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EntityTurtle;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.Items;
-import net.minecraft.server.v1_13_R2.PathfinderGoalTempt;
-import net.minecraft.server.v1_13_R2.RecipeItemStack;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.DataWatcherObject;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityChicken;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityOcelot;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTurtle;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.Items;
+import net.minecraft.server.v1_14_R1.PathfinderGoalAvoidTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalBreed;
+import net.minecraft.server.v1_14_R1.PathfinderGoalFloat;
+import net.minecraft.server.v1_14_R1.PathfinderGoalLeapAtTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalLookAtPlayer;
+import net.minecraft.server.v1_14_R1.PathfinderGoalNearestAttackableTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalOcelotAttack;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomStrollLand;
+import net.minecraft.server.v1_14_R1.PathfinderGoalTempt;
+import net.minecraft.server.v1_14_R1.RecipeItemStack;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.mob.OcelotConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASD;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAvoidTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIBreed;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIFollowOwner;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AILeapAtTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AISit;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AISwim;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AITargetNonTamed;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AITempt;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWanderAvoidWater;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWatchClosest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.ocelot.AIOcelotAttack;
-import net.pl3x.bukkit.ridables.entity.ai.goal.ocelot.AIOcelotSitOnBlock;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASD;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.Field;
 
 public class RidableOcelot extends EntityOcelot implements RidableEntity {
-    public static final OcelotConfig CONFIG = new OcelotConfig();
-    public static final RecipeItemStack TEMPTATION_ITEMS = RecipeItemStack.a(Items.COD, Items.SALMON, Items.TROPICAL_FISH, Items.PUFFERFISH);
+    private static final RecipeItemStack TEMPTATION_ITEMS = RecipeItemStack.a(Items.COD, Items.SALMON);
 
-    private static Field aiTempt;
+    private static OcelotConfig config;
 
-    static {
-        try {
-            aiTempt = EntityOcelot.class.getDeclaredField("bK");
-            aiTempt.setAccessible(true);
-        } catch (NoSuchFieldException ignore) {
-        }
-    }
+    private PathfinderGoalAvoidTarget<EntityHuman> aiAvoidEntity;
 
-    private AIAvoidTarget<EntityHuman> aiAvoidEntity;
-
-    public RidableOcelot(World world) {
-        super(world);
+    public RidableOcelot(EntityTypes<? extends EntityOcelot> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new ControllerWASD(this);
         lookController = new LookController(this);
+
+        if (config == null) {
+            config = getConfig();
+        }
     }
 
     @Override
@@ -61,86 +55,123 @@ public class RidableOcelot extends EntityOcelot implements RidableEntity {
         return RidableType.OCELOT;
     }
 
-    // canDespawn
     @Override
-    public boolean isTypeNotPersistent() {
-        return !isTamed() && !hasCustomName() && !isLeashed() && ticksLived > 2400;
+    public OcelotConfig getConfig() {
+        return (OcelotConfig) getType().getConfig();
     }
 
     @Override
-    protected void initAttributes() {
-        super.initAttributes();
-        getAttributeMap().b(RidableType.RIDING_SPEED); // registerAttribute
-        reloadAttributes();
+    public double getRidingSpeed() {
+        return config.RIDING_SPEED;
     }
 
     @Override
-    public void reloadAttributes() {
-        getAttributeInstance(RidableType.RIDING_SPEED).setValue(CONFIG.RIDING_SPEED);
-        getAttributeInstance(GenericAttributes.maxHealth).setValue(CONFIG.MAX_HEALTH);
-        getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(CONFIG.BASE_SPEED);
-        getAttributeInstance(GenericAttributes.FOLLOW_RANGE).setValue(CONFIG.AI_FOLLOW_RANGE);
-    }
+    protected void initPathfinder() {
+        PathfinderGoalTempt goalTempt = new PathfinderGoalTempt(this, 0.6D, TEMPTATION_ITEMS, true) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
 
-    // initAI - override vanilla AI
-    @Override
-    protected void n() {
-        PathfinderGoalTempt goalTempt = new AITempt(this, 0.6D, true, TEMPTATION_ITEMS);
-        try {
-            aiTempt.set(this, goalTempt);
-        } catch (IllegalAccessException ignore) {
-        }
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
 
-        goalSit = new AISit(this);
+            protected boolean g() {
+                return super.g() && !isTrusting(RidableOcelot.this);
+            }
+        };
 
-        goalSelector.a(1, new AISwim(this));
-        goalSelector.a(2, goalSit);
+        setGoalTempt(this, goalTempt);
+
+        goalSelector.a(1, new PathfinderGoalFloat(this));
         goalSelector.a(3, goalTempt);
-        goalSelector.a(5, new AIFollowOwner(this, 1.0D, 10.0F, 5.0F));
-        goalSelector.a(6, new AIOcelotSitOnBlock(this, 0.8D));
-        goalSelector.a(7, new AILeapAtTarget(this, 0.3F));
-        goalSelector.a(8, new AIOcelotAttack(this));
-        goalSelector.a(9, new AIBreed(this, 0.8D, EntityChicken.class));
-        goalSelector.a(10, new AIWanderAvoidWater(this, 0.8D, 0.00001F));
-        goalSelector.a(11, new AIWatchClosest(this, EntityHuman.class, 10.0F));
-        targetSelector.a(1, new AITargetNonTamed<>(this, EntityChicken.class, false, null));
-        targetSelector.a(1, new AITargetNonTamed<>(this, EntityTurtle.class, false, EntityTurtle.bC));
-    }
+        goalSelector.a(7, new PathfinderGoalLeapAtTarget(this, 0.3F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
 
-    // setupTamedAI
-    @Override
-    protected void dz() {
-        if (aiAvoidEntity == null) {
-            aiAvoidEntity = new AIAvoidTarget<>(this, EntityHuman.class, 16.0F, 0.8D, 1.33D);
-        }
-        goalSelector.a(aiAvoidEntity); // removeTask
-        if (!isTamed()) {
-            goalSelector.a(4, aiAvoidEntity); // addTask
-        }
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(8, new PathfinderGoalOcelotAttack(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(9, new PathfinderGoalBreed(this, 0.8D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(10, new PathfinderGoalRandomStrollLand(this, 0.8D, 1.0000001E-5F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(11, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 10.0F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        targetSelector.a(1, new PathfinderGoalNearestAttackableTarget<EntityChicken>(this, EntityChicken.class, false) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        targetSelector.a(1, new PathfinderGoalNearestAttackableTarget<EntityTurtle>(this, EntityTurtle.class, 10, false, false, EntityTurtle.bz) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
     }
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
-        return CONFIG.RIDING_RIDE_IN_WATER;
+    public boolean be() {
+        return config.RIDING_RIDE_IN_WATER;
     }
 
     // getJumpUpwardsMotion
     @Override
-    protected float cG() {
-        return getRider() == null ? CONFIG.AI_JUMP_POWER : CONFIG.RIDING_JUMP_POWER;
+    protected float cW() {
+        return getRider() == null ? super.cW() : config.RIDING_JUMP_POWER;
     }
 
     @Override
     public void mobTick() {
-        Q = getRider() == null ? CONFIG.AI_STEP_HEIGHT : CONFIG.RIDING_STEP_HEIGHT;
+        K = getRider() == null ? 0.6F : config.RIDING_STEP_HEIGHT;
         super.mobTick();
     }
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 
@@ -151,24 +182,79 @@ public class RidableOcelot extends EntityOcelot implements RidableEntity {
             return true; // handled by vanilla action
         }
         if (hand == EnumHand.MAIN_HAND && !entityhuman.isSneaking() && passengers.isEmpty() && !entityhuman.isPassenger()) {
-            if (!CONFIG.RIDING_BABIES && isBaby()) {
+            if (!config.RIDING_BABIES && isBaby()) {
                 return false; // do not ride babies
             }
-            if (CONFIG.RIDING_ONLY_OWNER_CAN_RIDE && isTamed() && getOwner() != entityhuman) {
-                return false; // only owner can ride
+            if (config.RIDING_REQUIRESTRUST && !isTrusting()) {
+                return false; // ocelot is not trusting
             }
-            return tryRide(entityhuman, CONFIG.RIDING_SADDLE_REQUIRE, CONFIG.RIDING_SADDLE_CONSUME);
+            return tryRide(entityhuman, config.RIDING_SADDLE_REQUIRE, config.RIDING_SADDLE_CONSUME);
         }
         return false;
     }
 
     @Override
-    public boolean removePassenger(Entity passenger, boolean notCancellable) {
+    public boolean removePassenger(Entity passenger) {
         if (passenger instanceof EntityPlayer && !passengers.isEmpty() && passenger == passengers.get(0)) {
-            if (!new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), notCancellable).callEvent() && !notCancellable) {
+            RidableDismountEvent event = new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), false);
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancellable()) {
                 return false; // cancelled
             }
         }
-        return super.removePassenger(passenger, notCancellable);
+        return super.removePassenger(passenger);
+    }
+
+    // setupTamedAI
+    @Override
+    protected void dV() {
+        if (aiAvoidEntity == null) {
+            aiAvoidEntity = new PathfinderGoalAvoidTarget<EntityHuman>(this, EntityHuman.class, 16.0F, 0.8D, 1.33D) {
+                public boolean a() { // shouldExecute
+                    return getRider() == null && super.a();
+                }
+
+                public boolean b() { // shouldContinueExecuting
+                    return getRider() == null && super.b();
+                }
+            };
+        }
+        goalSelector.a(aiAvoidEntity); // removeTask
+        if (!isTrusting()) {
+            goalSelector.a(4, aiAvoidEntity); // addTask
+        }
+    }
+
+    public boolean isTrusting() {
+        return isTrusting(this);
+    }
+
+    private static Field goalTempt;
+    private static Field isTrusting;
+
+    static {
+        try {
+            goalTempt = EntityOcelot.class.getDeclaredField("bD");
+            goalTempt.setAccessible(true);
+            isTrusting = EntityOcelot.class.getDeclaredField("bA");
+            isTrusting.setAccessible(true);
+        } catch (NoSuchFieldException ignore) {
+        }
+    }
+
+    private static void setGoalTempt(EntityOcelot ocelot, PathfinderGoalTempt goal) {
+        try {
+            goalTempt.set(ocelot, goal);
+        } catch (IllegalAccessException ignore) {
+        }
+    }
+
+    private static boolean isTrusting(EntityOcelot ocelot) {
+        try {
+            //noinspection unchecked
+            return ocelot.getDataWatcher().get((DataWatcherObject<Boolean>) isTrusting.get(ocelot));
+        } catch (IllegalAccessException ignore) {
+        }
+        return false;
     }
 }

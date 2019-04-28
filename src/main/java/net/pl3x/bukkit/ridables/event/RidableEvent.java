@@ -1,6 +1,6 @@
 package net.pl3x.bukkit.ridables.event;
 
-import net.minecraft.server.v1_13_R2.EntityInsentient;
+import net.minecraft.server.v1_14_R1.EntityInsentient;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
 import org.bukkit.event.Cancellable;

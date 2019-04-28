@@ -1,6 +1,6 @@
 package net.pl3x.bukkit.ridables.configuration.mob;
 
-import net.minecraft.server.v1_13_R2.PotionRegistry;
+import net.minecraft.server.v1_14_R1.PotionRegistry;
 import net.pl3x.bukkit.ridables.configuration.Config;
 import net.pl3x.bukkit.ridables.configuration.MobConfig;
 import net.pl3x.bukkit.ridables.util.Logger;

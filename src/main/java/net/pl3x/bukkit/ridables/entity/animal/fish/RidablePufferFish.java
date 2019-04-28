@@ -1,63 +1,47 @@
 package net.pl3x.bukkit.ridables.entity.animal.fish;
 
-import net.minecraft.server.v1_13_R2.DamageSource;
-import net.minecraft.server.v1_13_R2.DataWatcherObject;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityInsentient;
-import net.minecraft.server.v1_13_R2.EntityLiving;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EntityPufferFish;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.EnumMonsterType;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.IEntitySelector;
-import net.minecraft.server.v1_13_R2.MobEffect;
-import net.minecraft.server.v1_13_R2.MobEffects;
-import net.minecraft.server.v1_13_R2.PacketPlayOutGameStateChange;
-import net.minecraft.server.v1_13_R2.SoundEffects;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityLiving;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityPufferFish;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.EnumMonsterType;
+import net.minecraft.server.v1_14_R1.IEntitySelector;
+import net.minecraft.server.v1_14_R1.PathfinderGoal;
+import net.minecraft.server.v1_14_R1.PathfinderGoalAvoidTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalPanic;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.mob.PufferfishConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAvoidTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIPanic;
-import net.pl3x.bukkit.ridables.entity.ai.goal.fish.AIFishSwim;
-import net.pl3x.bukkit.ridables.entity.ai.goal.fish.pufferfish.AIPuffUp;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityPotionEffectEvent;
 
 import java.lang.reflect.Field;
 import java.util.function.Predicate;
 
 public class RidablePufferFish extends EntityPufferFish implements RidableEntity {
-    public static final PufferfishConfig CONFIG = new PufferfishConfig();
-    public static final Predicate<EntityLiving> ENEMY_MATCHER = (target) ->
-            target != null && target.getMonsterType() != EnumMonsterType.e // EnumMonsterType.WATER
-                    && IEntitySelector.canAITarget().test(target);
+    public static final Predicate<EntityLiving> ENEMY_MATCHER = (target) -> target != null
+            && IEntitySelector.e.test(target) // canAITarget
+            && target.getMonsterType() != EnumMonsterType.e; // EnumMonsterType.WATER
 
-    private static Field puffTimer;
-    private static Field deflateTimer;
+    private static PufferfishConfig config;
 
-    static {
-        try {
-            puffTimer = EntityPufferFish.class.getDeclaredField("b");
-            puffTimer.setAccessible(true);
-            deflateTimer = EntityPufferFish.class.getDeclaredField("c");
-            deflateTimer.setAccessible(true);
-        } catch (NoSuchFieldException ignore) {
-        }
-    }
-
-    private boolean fakePuffState = false;
     private int spacebarCooldown = 0;
 
-    public RidablePufferFish(World world) {
-        super(world);
+    public RidablePufferFish(EntityTypes<? extends EntityPufferFish> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new RidableCod.FishWASDController(this);
         lookController = new LookController(this);
+
+        if (config == null) {
+            config = getConfig();
+        }
     }
 
     @Override
@@ -65,70 +49,70 @@ public class RidablePufferFish extends EntityPufferFish implements RidableEntity
         return RidableType.PUFFERFISH;
     }
 
-    // isNoDespawnRequired
     @Override
-    public boolean isPersistent() {
-        return isFromBucket() || persistent;
-    }
-
-    // canDespawn
-    @Override
-    public boolean isTypeNotPersistent() {
-        return !isFromBucket() && !hasCustomName() && !isLeashed();
+    public PufferfishConfig getConfig() {
+        return (PufferfishConfig) getType().getConfig();
     }
 
     @Override
-    public void setFromBucket(boolean flag) {
-        try {
-            datawatcher.set((DataWatcherObject<? super Boolean>) RidableCod.fromBucket.get(this), flag);
-        } catch (IllegalAccessException e) {
-            super.setFromBucket(flag);
-        }
+    public double getRidingSpeed() {
+        return config.RIDING_SPEED;
     }
 
     @Override
-    protected void initAttributes() {
-        super.initAttributes();
-        getAttributeMap().b(RidableType.RIDING_SPEED); // registerAttribute
-        reloadAttributes();
-    }
-
-    @Override
-    public void reloadAttributes() {
-        getAttributeInstance(RidableType.RIDING_SPEED).setValue(CONFIG.RIDING_SPEED);
-        getAttributeInstance(GenericAttributes.maxHealth).setValue(CONFIG.MAX_HEALTH);
-        getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(CONFIG.BASE_SPEED);
-        getAttributeInstance(GenericAttributes.FOLLOW_RANGE).setValue(CONFIG.AI_FOLLOW_RANGE);
-    }
-
-    // initAI - override vanilla AI
-    @Override
-    protected void n() {
+    protected void initPathfinder() {
         // from EntityFish
-        if (CONFIG.AI_PANIC_SPEED > 0) {
-            goalSelector.a(0, new AIPanic(this, CONFIG.AI_PANIC_SPEED));
-        }
-        if (CONFIG.AI_AVOID_PLAYER_DISTANCE > 0) {
-            goalSelector.a(2, new AIAvoidTarget<>(this, EntityHuman.class, CONFIG.AI_AVOID_PLAYER_DISTANCE, CONFIG.AI_AVOID_PLAYER_SPEED_FAR, CONFIG.AI_AVOID_PLAYER_SPEED_NEAR, IEntitySelector.notSpectator()));
-        }
-        goalSelector.a(4, new AIFishSwim(this));
+        goalSelector.a(0, new PathfinderGoalPanic(this, 1.25D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(2, new PathfinderGoalAvoidTarget<EntityHuman>(this, EntityHuman.class, 8.0F, 1.6D, 1.4D, IEntitySelector.f::test) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(4, new RidableCod.AIFishSwim(this));
 
         // from EntityPufferfish
-        if (CONFIG.AI_PUFF_UP_RADIUS > 0) {
-            goalSelector.a(5, new AIPuffUp(this));
-        }
+        goalSelector.a(5, new PathfinderGoal() {
+            public boolean a() { // shouldExecute
+                return getRider() == null && !world.a(EntityLiving.class, getBoundingBox().g(2.0D), ENEMY_MATCHER).isEmpty();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return a(); // shouldExecute
+            }
+
+            public void c() { // startExecuting
+                setPuffTimer(1);
+                setDeflateTimer(0);
+            }
+
+            public void d() { // resetTask
+                setPuffTimer(0);
+            }
+        });
     }
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
+    public boolean be() {
         return true;
     }
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 
@@ -140,52 +124,17 @@ public class RidablePufferFish extends EntityPufferFish implements RidableEntity
         }
         EntityPlayer rider = getRider();
         if (rider != null) {
-            motY += 0.005D;
+            setMot(getMot().add(0.0D, 0.005D, 0.0D));
         }
-        int puffState = getPuffState();
-        if (puffState > 0) {
-            final float damage = getDamage(rider, puffState);
-            final int poisonTicks = getPoisonDuration(rider, puffState);
-            final int poisonAmplifier = getPoisonAmplifier(rider, puffState);
-            world.a(EntityInsentient.class, getBoundingBox().g(0.3D), ENEMY_MATCHER).stream() // getEntitiesWithinAABB grow
-                    .filter(EntityLiving::isAlive)
-                    .forEach(target -> {
-                        if (target.damageEntity(DamageSource.mobAttack(this), damage)) {
-                            inflictPoison(target, poisonTicks, poisonAmplifier, true);
-                        }
-                    });
-        }
-        fakePuffState = true;
         super.movementTick();
-        fakePuffState = false;
-    }
-
-    @Override
-    public int getPuffState() {
-        return fakePuffState ? -1 : super.getPuffState();
     }
 
     // onCollideWithPlayer
     @Override
-    public void d(EntityHuman player) {
-        EntityPlayer rider = getRider();
-        if (player == rider) {
-            return; // do not damage rider
-        }
-        int puffState = getPuffState();
-        float damage = getDamage(rider, puffState);
-        if (player instanceof EntityPlayer && damage > 0 && player.damageEntity(DamageSource.mobAttack(this), damage)) {
-            ((EntityPlayer) player).playerConnection.sendPacket(new PacketPlayOutGameStateChange(9, 0.0F));
-            inflictPoison(player, getPoisonDuration(rider, puffState), getPoisonAmplifier(rider, puffState), false);
-        }
-    }
-
-    public void inflictPoison(EntityLiving target, int poisonTicks, int poisonAmplifier, boolean playSound) {
-        if (poisonTicks > 0) {
-            target.addEffect(new MobEffect(MobEffects.POISON, poisonTicks, poisonAmplifier), EntityPotionEffectEvent.Cause.ATTACK);
-            if (playSound) {
-                a(SoundEffects.ENTITY_PUFFER_FISH_STING, 1.0F, 1.0F); // playSound
-            }
+    public void pickup(EntityHuman player) {
+        // do not damage rider
+        if (player != getRider()) {
+            super.pickup(player);
         }
     }
 
@@ -196,19 +145,21 @@ public class RidablePufferFish extends EntityPufferFish implements RidableEntity
             return true; // handled by vanilla action
         }
         if (hand == EnumHand.MAIN_HAND && !entityhuman.isSneaking() && passengers.isEmpty() && !entityhuman.isPassenger()) {
-            return tryRide(entityhuman, CONFIG.RIDING_SADDLE_REQUIRE, CONFIG.RIDING_SADDLE_CONSUME);
+            return tryRide(entityhuman, config.RIDING_SADDLE_REQUIRE, config.RIDING_SADDLE_CONSUME);
         }
         return false;
     }
 
     @Override
-    public boolean removePassenger(Entity passenger, boolean notCancellable) {
+    public boolean removePassenger(Entity passenger) {
         if (passenger instanceof EntityPlayer && !passengers.isEmpty() && passenger == passengers.get(0)) {
-            if (!new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), notCancellable).callEvent() && !notCancellable) {
+            RidableDismountEvent event = new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), false);
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancellable()) {
                 return false; // cancelled
             }
         }
-        return super.removePassenger(passenger, notCancellable);
+        return super.removePassenger(passenger);
     }
 
     @Override
@@ -227,19 +178,17 @@ public class RidablePufferFish extends EntityPufferFish implements RidableEntity
         return false;
     }
 
-    public float getDamage(EntityPlayer rider, int puffState) {
-        return puffState == 1 ? (rider == null ? CONFIG.AI_DAMAGE_HALF_PUFF : CONFIG.RIDING_DAMAGE_HALF_PUFF)
-                : (puffState == 2 ? (rider == null ? CONFIG.AI_DAMAGE_FULL_PUFF : CONFIG.RIDING_DAMAGE_FULL_PUFF) : 0);
-    }
+    private static Field puffTimer;
+    private static Field deflateTimer;
 
-    public int getPoisonDuration(EntityPlayer rider, int puffState) {
-        return puffState == 1 ? (rider == null ? CONFIG.AI_POISON_DURATION_HALF_PUFF : CONFIG.RIDING_POISON_DURATION_HALF_PUFF)
-                : (puffState == 2 ? (rider == null ? CONFIG.AI_POISON_DURATION_FULL_PUFF : CONFIG.RIDING_POISON_DURATION_FULL_PUFF) : 0);
-    }
-
-    public int getPoisonAmplifier(EntityPlayer rider, int puffState) {
-        return puffState == 1 ? (rider == null ? CONFIG.AI_POISON_AMPLIFIER_HALF_PUFF : CONFIG.RIDING_POISON_AMPLIFIER_HALF_PUFF)
-                : (puffState == 2 ? (rider == null ? CONFIG.AI_POISON_AMPLIFIER_FULL_PUFF : CONFIG.RIDING_POISON_AMPLIFIER_FULL_PUFF) : 0);
+    static {
+        try {
+            puffTimer = EntityPufferFish.class.getDeclaredField("c");
+            puffTimer.setAccessible(true);
+            deflateTimer = EntityPufferFish.class.getDeclaredField("d");
+            deflateTimer.setAccessible(true);
+        } catch (NoSuchFieldException ignore) {
+        }
     }
 
     /**

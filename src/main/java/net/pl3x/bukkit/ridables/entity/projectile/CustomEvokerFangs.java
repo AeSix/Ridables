@@ -1,12 +1,13 @@
 package net.pl3x.bukkit.ridables.entity.projectile;
 
-import net.minecraft.server.v1_13_R2.DamageSource;
-import net.minecraft.server.v1_13_R2.EntityEvokerFangs;
-import net.minecraft.server.v1_13_R2.EntityLiving;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.DamageSource;
+import net.minecraft.server.v1_14_R1.EntityEvokerFangs;
+import net.minecraft.server.v1_14_R1.EntityLiving;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.entity.monster.RidableEvoker;
-import org.bukkit.craftbukkit.v1_13_R2.event.CraftEventFactory;
+import org.bukkit.craftbukkit.v1_14_R1.event.CraftEventFactory;
 import org.bukkit.entity.Evoker;
 import org.bukkit.entity.Player;
 
@@ -33,8 +34,8 @@ public class CustomEvokerFangs extends EntityEvokerFangs implements CustomProjec
     private final RidableEvoker evoker;
     private final EntityPlayer rider;
 
-    public CustomEvokerFangs(World world) {
-        super(world);
+    public CustomEvokerFangs(EntityTypes<? extends EntityEvokerFangs> entitytypes, World world) {
+        super(entitytypes, world);
         this.evoker = null;
         this.rider = null;
     }

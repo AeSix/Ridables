@@ -1,20 +1,21 @@
 package net.pl3x.bukkit.ridables.entity.projectile;
 
-import net.minecraft.server.v1_13_R2.AxisAlignedBB;
-import net.minecraft.server.v1_13_R2.DamageSource;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityLiving;
-import net.minecraft.server.v1_13_R2.EntityLlamaSpit;
-import net.minecraft.server.v1_13_R2.IProjectile;
-import net.minecraft.server.v1_13_R2.Material;
-import net.minecraft.server.v1_13_R2.MathHelper;
-import net.minecraft.server.v1_13_R2.MovingObjectPosition;
-import net.minecraft.server.v1_13_R2.NBTTagCompound;
-import net.minecraft.server.v1_13_R2.Particles;
-import net.minecraft.server.v1_13_R2.Vec3D;
-import net.minecraft.server.v1_13_R2.World;
-import net.minecraft.server.v1_13_R2.WorldServer;
+import net.minecraft.server.v1_14_R1.AxisAlignedBB;
+import net.minecraft.server.v1_14_R1.DamageSource;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityLiving;
+import net.minecraft.server.v1_14_R1.EntityLlamaSpit;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.IProjectile;
+import net.minecraft.server.v1_14_R1.Material;
+import net.minecraft.server.v1_14_R1.MathHelper;
+import net.minecraft.server.v1_14_R1.MovingObjectPosition;
+import net.minecraft.server.v1_14_R1.NBTTagCompound;
+import net.minecraft.server.v1_14_R1.Particles;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
+import net.minecraft.server.v1_14_R1.WorldServer;
 import net.pl3x.bukkit.ridables.entity.monster.RidablePhantom;
 import net.pl3x.bukkit.ridables.util.Const;
 import org.bukkit.entity.Phantom;
@@ -27,8 +28,8 @@ public class PhantomFlames extends EntityLlamaSpit implements IProjectile, Custo
     private EntityHuman rider;
     private int life;
 
-    public PhantomFlames(World world) {
-        super(world);
+    public PhantomFlames(EntityTypes<? extends EntityLlamaSpit> entitytypes, World world) {
+        super(entitytypes, world);
         setSize(1.0F, 1.0F);
     }
 

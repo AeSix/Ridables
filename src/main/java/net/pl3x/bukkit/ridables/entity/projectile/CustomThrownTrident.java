@@ -1,30 +1,31 @@
 package net.pl3x.bukkit.ridables.entity.projectile;
 
-import net.minecraft.server.v1_13_R2.AxisAlignedBB;
-import net.minecraft.server.v1_13_R2.BlockPosition;
-import net.minecraft.server.v1_13_R2.DamageSource;
-import net.minecraft.server.v1_13_R2.EnchantmentManager;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityArrow;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityLightning;
-import net.minecraft.server.v1_13_R2.EntityLiving;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EntityThrownTrident;
-import net.minecraft.server.v1_13_R2.FluidCollisionOption;
-import net.minecraft.server.v1_13_R2.IBlockData;
-import net.minecraft.server.v1_13_R2.ItemStack;
-import net.minecraft.server.v1_13_R2.MathHelper;
-import net.minecraft.server.v1_13_R2.MovingObjectPosition;
-import net.minecraft.server.v1_13_R2.Particles;
-import net.minecraft.server.v1_13_R2.SoundEffect;
-import net.minecraft.server.v1_13_R2.SoundEffects;
-import net.minecraft.server.v1_13_R2.Vec3D;
-import net.minecraft.server.v1_13_R2.VoxelShape;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.AxisAlignedBB;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.DamageSource;
+import net.minecraft.server.v1_14_R1.EnchantmentManager;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityArrow;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityLightning;
+import net.minecraft.server.v1_14_R1.EntityLiving;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityThrownTrident;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.FluidCollisionOption;
+import net.minecraft.server.v1_14_R1.IBlockData;
+import net.minecraft.server.v1_14_R1.ItemStack;
+import net.minecraft.server.v1_14_R1.MathHelper;
+import net.minecraft.server.v1_14_R1.MovingObjectPosition;
+import net.minecraft.server.v1_14_R1.Particles;
+import net.minecraft.server.v1_14_R1.SoundEffect;
+import net.minecraft.server.v1_14_R1.SoundEffects;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.VoxelShape;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.entity.monster.zombie.RidableDrowned;
 import net.pl3x.bukkit.ridables.util.Const;
-import org.bukkit.craftbukkit.v1_13_R2.event.CraftEventFactory;
+import org.bukkit.craftbukkit.v1_14_R1.event.CraftEventFactory;
 import org.bukkit.entity.Drowned;
 import org.bukkit.entity.Player;
 
@@ -54,8 +55,8 @@ public class CustomThrownTrident extends EntityThrownTrident implements CustomPr
     private final RidableDrowned drowned;
     private final EntityPlayer rider;
 
-    public CustomThrownTrident(World world) {
-        super(world);
+    public CustomThrownTrident(EntityTypes<? extends EntityThrownTrident> entitytypes, World world) {
+        super(entitytypes, world);
         this.drowned = null;
         this.rider = null;
         this.fromPlayer = PickupStatus.DISALLOWED;
@@ -219,7 +220,7 @@ public class CustomThrownTrident extends EntityThrownTrident implements CustomPr
     protected void b(MovingObjectPosition mop) {
         ItemStack tridentStack = getItemStack();
         Entity hitEntity = mop.entity;
-        float damage = rider == null ? RidableDrowned.CONFIG.AI_TRIDENT_DAMAGE : RidableDrowned.CONFIG.RIDING_SHOOT_DAMAGE;
+        float damage = rider == null ? RidableDrowned.config.AI_TRIDENT_DAMAGE : RidableDrowned.config.RIDING_SHOOT_DAMAGE;
         if (hitEntity instanceof EntityLiving) {
             damage += EnchantmentManager.a(tridentStack, ((EntityLiving) hitEntity).getMonsterType());
         }
@@ -239,7 +240,7 @@ public class CustomThrownTrident extends EntityThrownTrident implements CustomPr
         motZ *= -0.01D;
         float soundVolume = 1.0F;
         if (world.Y()) {
-            if ((rider != null && RidableDrowned.CONFIG.RIDING_SHOOT_CHANNELING) || EnchantmentManager.h(tridentStack)) {
+            if ((rider != null && RidableDrowned.config.RIDING_SHOOT_CHANNELING) || EnchantmentManager.h(tridentStack)) {
                 BlockPosition pos = hitEntity.getChunkCoordinates();
                 if (world.e(pos)) {
                     EntityLightning lightning = new EntityLightning(world, (double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D, false);

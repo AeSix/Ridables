@@ -1,8 +1,8 @@
 package net.pl3x.bukkit.ridables.entity.ai.goal.skeleton;
 
-import net.minecraft.server.v1_13_R2.EntityCreature;
-import net.minecraft.server.v1_13_R2.EntitySkeletonAbstract;
-import net.minecraft.server.v1_13_R2.PathfinderGoalMeleeAttack;
+import net.minecraft.server.v1_14_R1.EntityCreature;
+import net.minecraft.server.v1_14_R1.EntitySkeletonAbstract;
+import net.minecraft.server.v1_14_R1.PathfinderGoalMeleeAttack;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 
 public class AISkeletonMeleeAttack extends PathfinderGoalMeleeAttack {

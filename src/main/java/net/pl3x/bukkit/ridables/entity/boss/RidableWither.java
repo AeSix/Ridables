@@ -1,35 +1,30 @@
 package net.pl3x.bukkit.ridables.entity.boss;
 
-import net.minecraft.server.v1_13_R2.BlockPosition;
-import net.minecraft.server.v1_13_R2.Blocks;
-import net.minecraft.server.v1_13_R2.BossBattleServer;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityInsentient;
-import net.minecraft.server.v1_13_R2.EntityLiving;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EntityWither;
-import net.minecraft.server.v1_13_R2.EnumDifficulty;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.EnumMonsterType;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.IBlockData;
-import net.minecraft.server.v1_13_R2.IEntitySelector;
-import net.minecraft.server.v1_13_R2.MathHelper;
-import net.minecraft.server.v1_13_R2.PacketPlayOutWorldEvent;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.Blocks;
+import net.minecraft.server.v1_14_R1.BossBattleServer;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityInsentient;
+import net.minecraft.server.v1_14_R1.EntityLiving;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EntityWither;
+import net.minecraft.server.v1_14_R1.EnumDifficulty;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.EnumMonsterType;
+import net.minecraft.server.v1_14_R1.GenericAttributes;
+import net.minecraft.server.v1_14_R1.IBlockData;
+import net.minecraft.server.v1_14_R1.IEntitySelector;
+import net.minecraft.server.v1_14_R1.MathHelper;
+import net.minecraft.server.v1_14_R1.PacketPlayOutWorldEvent;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.Lang;
 import net.pl3x.bukkit.ridables.configuration.mob.WitherConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASDFlying;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAttackNearest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAttackRanged;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIHurtByTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AILookIdle;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWanderAvoidWater;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWatchClosest;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASDFlying;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.entity.ai.goal.wither.AIWitherDoNothing;
 import net.pl3x.bukkit.ridables.entity.projectile.CustomWitherSkull;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
@@ -37,8 +32,8 @@ import net.pl3x.bukkit.ridables.util.Const;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_13_R2.event.CraftEventFactory;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_14_R1.event.CraftEventFactory;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
@@ -54,8 +49,8 @@ public class RidableWither extends EntityWither implements RidableEntity {
 
     private int shootCooldown = 0;
 
-    public RidableWither(World world) {
-        super(world);
+    public RidableWither(EntityTypes<? extends EntityWither> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new ControllerWASDFlying(this);
         lookController = new LookController(this);
     }
@@ -105,7 +100,7 @@ public class RidableWither extends EntityWither implements RidableEntity {
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
+    public boolean be() {
         return false;
     }
 
@@ -241,8 +236,8 @@ public class RidableWither extends EntityWither implements RidableEntity {
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 
@@ -339,7 +334,7 @@ public class RidableWither extends EntityWither implements RidableEntity {
         }
 
         CraftPlayer player = (CraftPlayer) ((Entity) rider).getBukkitEntity();
-        if (!player.hasPermission("allow.shoot.wither")) {
+        if (!player.hasPermission("ridables.shoot.wither")) {
             Lang.send(player, Lang.SHOOT_NO_PERMISSION);
             return false;
         }

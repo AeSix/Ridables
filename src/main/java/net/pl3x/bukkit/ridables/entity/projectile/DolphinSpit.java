@@ -1,22 +1,24 @@
 package net.pl3x.bukkit.ridables.entity.projectile;
 
-import net.minecraft.server.v1_13_R2.AxisAlignedBB;
-import net.minecraft.server.v1_13_R2.DamageSource;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityLiving;
-import net.minecraft.server.v1_13_R2.EntityLlamaSpit;
-import net.minecraft.server.v1_13_R2.IProjectile;
-import net.minecraft.server.v1_13_R2.Material;
-import net.minecraft.server.v1_13_R2.MathHelper;
-import net.minecraft.server.v1_13_R2.MovingObjectPosition;
-import net.minecraft.server.v1_13_R2.NBTTagCompound;
-import net.minecraft.server.v1_13_R2.Particles;
-import net.minecraft.server.v1_13_R2.Vec3D;
-import net.minecraft.server.v1_13_R2.World;
-import net.minecraft.server.v1_13_R2.WorldServer;
+import net.minecraft.server.v1_14_R1.DamageSource;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityLlamaSpit;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.IProjectile;
+import net.minecraft.server.v1_14_R1.Material;
+import net.minecraft.server.v1_14_R1.MathHelper;
+import net.minecraft.server.v1_14_R1.MovingObjectPosition;
+import net.minecraft.server.v1_14_R1.MovingObjectPositionEntity;
+import net.minecraft.server.v1_14_R1.NBTTagCompound;
+import net.minecraft.server.v1_14_R1.Particles;
+import net.minecraft.server.v1_14_R1.ProjectileHelper;
+import net.minecraft.server.v1_14_R1.RayTrace;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
+import net.minecraft.server.v1_14_R1.WorldServer;
 import net.pl3x.bukkit.ridables.entity.animal.RidableDolphin;
 import net.pl3x.bukkit.ridables.util.Const;
+import org.bukkit.craftbukkit.v1_14_R1.event.CraftEventFactory;
 import org.bukkit.entity.Dolphin;
 import org.bukkit.entity.Player;
 
@@ -28,18 +30,17 @@ public class DolphinSpit extends EntityLlamaSpit implements IProjectile, CustomP
     private NBTTagCompound nbt;
     private int life;
 
-    public DolphinSpit(World world) {
-        super(world);
-        setSize(0.25F, 0.25F);
+    public DolphinSpit(EntityTypes<? extends EntityLlamaSpit> entitytypes, World world) {
+        super(entitytypes, world);
     }
 
     public DolphinSpit(World world, RidableDolphin dolphin, EntityHuman rider) {
-        this(world);
+        this(EntityTypes.LLAMA_SPIT, world);
         this.dolphin = dolphin;
         this.rider = rider;
-        setPosition(dolphin.locX - (double) (dolphin.width + 1.0F) * 0.5D * (double) MathHelper.sin(dolphin.aQ * Const.DEG2RAD_FLOAT),
+        setPosition(dolphin.locX - (double) (dolphin.getWidth() + 1.0F) * 0.5D * (double) MathHelper.sin(dolphin.aK * Const.DEG2RAD_FLOAT),
                 dolphin.locY + (double) dolphin.getHeadHeight() - (double) 0.5F,
-                dolphin.locZ + (double) (dolphin.width + 1.0F) * 0.5D * (double) MathHelper.cos(dolphin.aQ * Const.DEG2RAD_FLOAT));
+                dolphin.locZ + (double) (dolphin.getWidth() + 1.0F) * 0.5D * (double) MathHelper.cos(dolphin.aK * Const.DEG2RAD_FLOAT));
     }
 
     @Override
@@ -68,7 +69,7 @@ public class DolphinSpit extends EntityLlamaSpit implements IProjectile, CustomP
         updatePosition();
 
         for (int i = 0; i < 5; i++) {
-            ((WorldServer) world).sendParticles(null, Particles.e,
+            ((WorldServer) world).sendParticles(null, Particles.BUBBLE,
                     locX + random.nextFloat() / 2 - 0.25F,
                     locY + random.nextFloat() / 2 - 0.25F,
                     locZ + random.nextFloat() / 2 - 0.25F,
@@ -84,11 +85,12 @@ public class DolphinSpit extends EntityLlamaSpit implements IProjectile, CustomP
     }
 
     private void updatePosition() {
-        locX += motX;
-        locY += motY;
-        locZ += motZ;
-        yaw = (float) (MathHelper.c(motX, motZ) * Const.RAD2DEG);
-        pitch = (float) (MathHelper.c(motY, (double) MathHelper.sqrt(motX * motX + motZ * motZ)) * Const.RAD2DEG);
+        Vec3D mot = getMot();
+        locX += mot.x;
+        locY += mot.y;
+        locZ += mot.z;
+        yaw = (float) (MathHelper.d(mot.x, mot.z) * Const.RAD2DEG);
+        pitch = (float) (MathHelper.d(mot.y, (double) MathHelper.sqrt(mot.x * mot.x + mot.z * mot.z)) * Const.RAD2DEG);
         while (pitch - lastPitch < -180.0F)
             lastPitch -= 360.0F;
         while (pitch - lastPitch >= 180.0F)
@@ -97,75 +99,50 @@ public class DolphinSpit extends EntityLlamaSpit implements IProjectile, CustomP
             lastYaw -= 360.0F;
         while (yaw - lastYaw >= 180.0F)
             lastYaw += 360.0F;
-        pitch = lastPitch + (pitch - lastPitch) * 0.2F;
-        yaw = lastYaw + (yaw - lastYaw) * 0.2F;
+        pitch = MathHelper.g(0.2F, lastPitch, pitch);
+        yaw = MathHelper.g(0.2F, lastYaw, yaw);
         if (!world.a(getBoundingBox(), Material.WATER)) {
-            motX *= (double) 0.99F;
-            motY *= (double) 0.99F;
-            motZ *= (double) 0.99F;
+            setMot(getMot().a((double) 0.99F));
         }
         if (!isNoGravity()) {
-            motY -= (double) 0.03F;
+            setMot(getMot().add(0.0D, (double) -0.3F, 0.0D));
         }
         setPosition(locX, locY, locZ);
     }
 
     private void detectCollisions() {
-        double reach = 10.0;
+        Vec3D mot = this.getMot();
+        MovingObjectPosition rayTrace = ProjectileHelper.a(this, getBoundingBox().a(mot).g(1.0D), (entity) ->
+                !entity.t() && entity != shooter && entity != rider, RayTrace.BlockCollisionOption.OUTLINE, true);
 
-        Vec3D minVec = new Vec3D(locX, locY, locZ);
-        Vec3D maxVec = new Vec3D(locX + motX * reach, locY + motY * reach, locZ + motZ * reach);
-
-        MovingObjectPosition rayTraceResult = world.rayTrace(minVec, maxVec);
-
-        minVec = new Vec3D(locX, locY, locZ);
-        maxVec = new Vec3D(locX + motX * reach, locY + motY * reach, locZ + motZ * reach);
-
-        if (rayTraceResult != null) {
-            maxVec = new Vec3D(rayTraceResult.pos.x, rayTraceResult.pos.y, rayTraceResult.pos.z);
-        }
-
-        EntityLiving hitEntity = getHitEntity(minVec, maxVec);
-        if (hitEntity != null && rider != null) {
-            if (RidableDolphin.CONFIG.RIDING_SHOOT_DAMAGE > 0) {
-                hitEntity.damageEntity(DamageSource.a(this, rider).c(), RidableDolphin.CONFIG.RIDING_SHOOT_DAMAGE);
-            }
-            die();
-        }
-    }
-
-    private EntityLiving getHitEntity(Vec3D vec3d, Vec3D vec3d1) {
-        EntityLiving entity = null;
-        double d0 = 0.0D;
-        for (Entity entity1 : world.getEntities(this, getBoundingBox().b(motX, motY, motZ).g(1.0D))) {
-            if (entity1 != dolphin && entity1 != rider && entity1 instanceof EntityLiving) {
-                AxisAlignedBB axisalignedbb = entity1.getBoundingBox().g(0.5D);
-                MovingObjectPosition movingobjectposition = axisalignedbb.b(vec3d, vec3d1);
-                if (movingobjectposition != null) {
-                    double d1 = vec3d.distanceSquared(movingobjectposition.pos);
-                    if (d1 < d0 || d0 == 0.0D) {
-                        entity = (EntityLiving) entity1;
-                        d0 = d1;
-                    }
-                }
+        if (rayTrace != null) {
+            CraftEventFactory.callProjectileHitEvent(this, rayTrace);
+            MovingObjectPosition.EnumMovingObjectType type = rayTrace.getType();
+            if (type == MovingObjectPosition.EnumMovingObjectType.ENTITY && shooter != null) {
+                ((MovingObjectPositionEntity) rayTrace).getEntity().damageEntity(DamageSource.a(this, rider != null ? rider : shooter).c(), 1.0F);
+            } else if (type == MovingObjectPosition.EnumMovingObjectType.BLOCK && !world.isClientSide) {
+                die();
             }
         }
-        return entity;
     }
 
     @Override
-    public void shoot(double d0, double d1, double d2, float f, float f1) {
-        float f2 = MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2);
-        motX = d0 = (d0 / (double) f2) * f;
-        motY = d1 = (d1 / (double) f2) * f;
-        motZ = d2 = (d2 / (double) f2) * f;
-        lastYaw = yaw = (float) (MathHelper.c(d0, d2) * Const.RAD2DEG);
-        lastPitch = pitch = (float) (MathHelper.c(d1, (double) MathHelper.sqrt(d0 * d0 + d2 * d2)) * Const.RAD2DEG);
+    public void shoot(double x, double y, double z, float speed, float inaccuracy) {
+        Vec3D motion = (new Vec3D(x, y, z)).d().add(
+                this.random.nextGaussian() * (double) 0.0075F * (double) inaccuracy,
+                this.random.nextGaussian() * (double) 0.0075F * (double) inaccuracy,
+                this.random.nextGaussian() * (double) 0.0075F * (double) inaccuracy
+        ).a((double) speed);
+
+        setMot(motion);
+
+        lastYaw = yaw = (float) (MathHelper.d(motion.x, z) * Const.RAD2DEG);
+        lastPitch = pitch = (float) (MathHelper.d(motion.y, (double) MathHelper.sqrt(b(motion))) * Const.RAD2DEG);
     }
 
     // entityInit
     @Override
-    protected void x_() {
+    protected void initDatawatcher() {
     }
 
     // readEntityFromNBT

@@ -1,21 +1,20 @@
 package net.pl3x.bukkit.ridables.entity.monster.slime;
 
-import net.minecraft.server.v1_13_R2.ControllerMove;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityIronGolem;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EntitySlime;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.ControllerMove;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityIronGolem;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntitySlime;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.GenericAttributes;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.mob.SlimeConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASD;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIFindNearestEntity;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIFindNearestPlayer;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASD;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.entity.ai.goal.slime.AISlimeAttack;
 import net.pl3x.bukkit.ridables.entity.ai.goal.slime.AISlimeFaceRandom;
 import net.pl3x.bukkit.ridables.entity.ai.goal.slime.AISlimeHop;
@@ -31,8 +30,8 @@ public class RidableSlime extends EntitySlime implements RidableEntity {
     private int prevSpacebarCharge = 0;
     private float fallDistanceCharge = 0;
 
-    public RidableSlime(World world) {
-        super(world);
+    public RidableSlime(EntityTypes<? extends EntitySlime> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new SlimeWASDController(this);
         lookController = new LookController(this);
     }
@@ -75,7 +74,7 @@ public class RidableSlime extends EntitySlime implements RidableEntity {
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
+    public boolean be() {
         return CONFIG.RIDING_RIDE_IN_WATER;
     }
 
@@ -100,8 +99,8 @@ public class RidableSlime extends EntitySlime implements RidableEntity {
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 
@@ -148,7 +147,7 @@ public class RidableSlime extends EntitySlime implements RidableEntity {
 
     @Override
     public boolean onSpacebar() {
-        if (getRider().getBukkitEntity().hasPermission("allow.special.slime")) {
+        if (getRider().getBukkitEntity().hasPermission("ridables.special.slime")) {
             spacebarCharge++;
             if (spacebarCharge > 50) {
                 spacebarCharge -= 2;

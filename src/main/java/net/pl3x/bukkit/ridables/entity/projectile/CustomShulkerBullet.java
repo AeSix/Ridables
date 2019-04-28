@@ -1,20 +1,21 @@
 package net.pl3x.bukkit.ridables.entity.projectile;
 
-import net.minecraft.server.v1_13_R2.AxisAlignedBB;
-import net.minecraft.server.v1_13_R2.DamageSource;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityLiving;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EntityShulkerBullet;
-import net.minecraft.server.v1_13_R2.EnumDirection;
-import net.minecraft.server.v1_13_R2.IProjectile;
-import net.minecraft.server.v1_13_R2.Material;
-import net.minecraft.server.v1_13_R2.MathHelper;
-import net.minecraft.server.v1_13_R2.MobEffect;
-import net.minecraft.server.v1_13_R2.MobEffects;
-import net.minecraft.server.v1_13_R2.MovingObjectPosition;
-import net.minecraft.server.v1_13_R2.Vec3D;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.AxisAlignedBB;
+import net.minecraft.server.v1_14_R1.DamageSource;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityLiving;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityShulkerBullet;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumDirection;
+import net.minecraft.server.v1_14_R1.IProjectile;
+import net.minecraft.server.v1_14_R1.Material;
+import net.minecraft.server.v1_14_R1.MathHelper;
+import net.minecraft.server.v1_14_R1.MobEffect;
+import net.minecraft.server.v1_14_R1.MobEffects;
+import net.minecraft.server.v1_14_R1.MovingObjectPosition;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.entity.monster.RidableShulker;
 import net.pl3x.bukkit.ridables.util.Const;
 import org.bukkit.entity.Player;
@@ -26,8 +27,8 @@ public class CustomShulkerBullet extends EntityShulkerBullet implements IProject
     private final EntityPlayer rider;
     private int life;
 
-    public CustomShulkerBullet(World world) {
-        super(world);
+    public CustomShulkerBullet(EntityTypes<? extends EntityShulkerBullet> entitytypes, World world) {
+        super(entitytypes, world);
         this.shulker = null;
         this.rider = null;
     }

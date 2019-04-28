@@ -1,7 +1,20 @@
 package net.pl3x.bukkit.ridables.util;
 
 public class Const {
+    /**
+     * Pi
+     */
     public static final float PI_FLOAT = (float) Math.PI;
+
+    /**
+     * 2 * Pi
+     */
+    public static final double TWOPI = Math.PI * 2D;
+
+    /**
+     * 2 * Pi
+     */
+    public static final float TWOPI_FLOAT = PI_FLOAT * 2F;
 
     /**
      * Radians to degrees

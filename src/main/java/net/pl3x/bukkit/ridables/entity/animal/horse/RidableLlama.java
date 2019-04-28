@@ -1,53 +1,50 @@
 package net.pl3x.bukkit.ridables.entity.animal.horse;
 
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityLlama;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityLlama;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EntityWolf;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.PathfinderGoalArrowAttack;
+import net.minecraft.server.v1_14_R1.PathfinderGoalBreed;
+import net.minecraft.server.v1_14_R1.PathfinderGoalFloat;
+import net.minecraft.server.v1_14_R1.PathfinderGoalFollowParent;
+import net.minecraft.server.v1_14_R1.PathfinderGoalHurtByTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalLlamaFollow;
+import net.minecraft.server.v1_14_R1.PathfinderGoalLookAtPlayer;
+import net.minecraft.server.v1_14_R1.PathfinderGoalNearestAttackableTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalPanic;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomLookaround;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomStrollLand;
+import net.minecraft.server.v1_14_R1.PathfinderGoalTame;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.Lang;
 import net.pl3x.bukkit.ridables.configuration.mob.LlamaConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASD;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAttackRanged;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIBreed;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIFollowParent;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AILookIdle;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIPanic;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AISwim;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWanderAvoidWater;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWatchClosest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.horse.AIHorseBucking;
-import net.pl3x.bukkit.ridables.entity.ai.goal.horse.llama.AILlamaDefendTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.horse.llama.AILlamaFollowCaravan;
-import net.pl3x.bukkit.ridables.entity.ai.goal.horse.llama.AILlamaHurtByTarget;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASD;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
 import net.pl3x.bukkit.ridables.event.RidableMountEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.Field;
 
 public class RidableLlama extends EntityLlama implements RidableEntity {
-    public static final LlamaConfig CONFIG = new LlamaConfig();
+    private static LlamaConfig config;
 
-    private static Field didSpit;
-
-    static {
-        try {
-            didSpit = EntityLlama.class.getDeclaredField("bP");
-            didSpit.setAccessible(true);
-        } catch (NoSuchFieldException ignore) {
-        }
-    }
-
-    public RidableLlama(World world) {
-        super(world);
+    public RidableLlama(EntityTypes<? extends EntityLlama> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new ControllerWASD(this);
         lookController = new LookController(this);
+
+        if (config == null) {
+            config = getConfig();
+        }
     }
 
     @Override
@@ -56,97 +53,149 @@ public class RidableLlama extends EntityLlama implements RidableEntity {
     }
 
     @Override
-    protected void initAttributes() {
-        super.initAttributes();
-        getAttributeMap().b(RidableType.RIDING_SPEED);
-        reloadAttributes();
+    public LlamaConfig getConfig() {
+        return (LlamaConfig) getType().getConfig();
     }
 
     @Override
-    public void reloadAttributes() {
-        getAttributeInstance(RidableType.RIDING_SPEED).setValue(CONFIG.RIDING_SPEED);
-        getAttributeInstance(GenericAttributes.maxHealth).setValue(CONFIG.MAX_HEALTH > 0.0D ? CONFIG.MAX_HEALTH : ec()); // getModifiedMaxHealth
-        getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(CONFIG.BASE_SPEED);
-        getAttributeInstance(attributeJumpStrength).setValue(CONFIG.AI_JUMP_POWER);
-        getAttributeInstance(GenericAttributes.FOLLOW_RANGE).setValue(CONFIG.AI_FOLLOW_RANGE);
+    public double getRidingSpeed() {
+        return config.RIDING_SPEED;
     }
 
-    // initAI - override vanilla AI
     @Override
-    protected void n() {
-        goalSelector.a(0, new AISwim(this));
-        goalSelector.a(1, new AIHorseBucking(this, 1.2D));
-        goalSelector.a(2, new AILlamaFollowCaravan(this, (double) 2.1F));
-        goalSelector.a(3, new AIAttackRanged(this, 1.25D, 40, 20.0F));
-        goalSelector.a(3, new AIPanic(this, 1.2D));
-        goalSelector.a(4, new AIBreed(this, 1.0D, EntityLlama.class));
-        goalSelector.a(5, new AIFollowParent(this, 1.0D));
-        goalSelector.a(6, new AIWanderAvoidWater(this, 0.7D));
-        goalSelector.a(7, new AIWatchClosest(this, EntityHuman.class, 6.0F));
-        goalSelector.a(8, new AILookIdle(this));
-        targetSelector.a(1, new AILlamaHurtByTarget(this));
-        targetSelector.a(2, new AILlamaDefendTarget(this));
+    protected void initPathfinder() {
+        goalSelector.a(0, new PathfinderGoalFloat(this));
+        goalSelector.a(1, new PathfinderGoalTame(this, 1.2D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(2, new PathfinderGoalLlamaFollow(this, (double) 2.1F)); // allow this for caravans while riding
+        goalSelector.a(3, new PathfinderGoalArrowAttack(this, 1.25D, 40, 20.0F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(3, new PathfinderGoalPanic(this, 1.2D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(4, new PathfinderGoalBreed(this, 1.0D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(5, new PathfinderGoalFollowParent(this, 1.0D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(6, new PathfinderGoalRandomStrollLand(this, 0.7D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(7, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(8, new PathfinderGoalRandomLookaround(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        targetSelector.a(1, new PathfinderGoalHurtByTarget(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                if (e instanceof EntityLlama) {
+                    EntityLlama llama = (EntityLlama) e;
+                    if (didSpit(llama)) {
+                        didSpit(llama, false);
+                        return false;
+                    }
+                }
+                return getRider() == null && super.b();
+            }
+        });
+        targetSelector.a(2, new PathfinderGoalNearestAttackableTarget<EntityWolf>(this, EntityWolf.class, 16, false, true, (wolf) -> !((EntityWolf) wolf).isTamed()) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+
+            protected double k() {
+                return super.k() * 0.25D;
+            }
+        });
     }
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
-        return CONFIG.RIDING_RIDE_IN_WATER;
+    public boolean be() {
+        return config.RIDING_RIDE_IN_WATER;
     }
 
     @Override
     public boolean isTamed() {
-        return p(2) || (CONFIG.RIDING_BABIES && isBaby()); // getHorseWatchableBoolean
+        return r(2) || (config.RIDING_BABIES && isBaby()); // getHorseWatchableBoolean
     }
 
     // getJumpUpwardsMotion
     @Override
-    protected float cG() {
-        return getRider() == null ? CONFIG.AI_JUMP_POWER : CONFIG.RIDING_JUMP_POWER;
-    }
-
-    public boolean didSpit() {
-        try {
-            return didSpit.getBoolean(this);
-        } catch (IllegalAccessException ignore) {
-        }
-        return false;
-    }
-
-    public void setDidSpit(boolean spit) {
-        try {
-            didSpit.setBoolean(this, spit);
-        } catch (IllegalAccessException ignore) {
-        }
-    }
-
-    @Override
-    public boolean isLeashed() {
-        return (CONFIG.RIDING_STARTS_CARAVAN && getRider() != null) || super.isLeashed();
-    }
-
-    @Override
-    public Entity getLeashHolder() {
-        EntityPlayer rider = getRider();
-        return rider != null ? rider : super.getLeashHolder();
-    }
-
-    // hasCaravan
-    @Override
-    public boolean em() {
-        return (CONFIG.RIDING_STARTS_CARAVAN && getRider() != null) || super.em();
+    protected float cW() {
+        return getRider() == null ? super.cW() : config.RIDING_JUMP_POWER;
     }
 
     @Override
     protected void mobTick() {
-        Q = getRider() == null ? CONFIG.AI_STEP_HEIGHT : CONFIG.RIDING_STEP_HEIGHT;
+        K = getRider() == null ? 1.0F : config.RIDING_STEP_HEIGHT;
         super.mobTick();
     }
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         //checkMove(); // not needed
     }
 
@@ -156,7 +205,7 @@ public class RidableLlama extends EntityLlama implements RidableEntity {
         if (super.a(entityhuman, hand)) {
             return true; // handled by vanilla action
         }
-        if (isBaby() && CONFIG.RIDING_BABIES && hand == EnumHand.MAIN_HAND && !entityhuman.isSneaking() && passengers.isEmpty() && !entityhuman.isPassenger()) {
+        if (isBaby() && config.RIDING_BABIES && hand == EnumHand.MAIN_HAND && !entityhuman.isSneaking() && passengers.isEmpty() && !entityhuman.isPassenger()) {
             g(entityhuman); // mountTo
             return true;
         }
@@ -167,23 +216,69 @@ public class RidableLlama extends EntityLlama implements RidableEntity {
     @Override
     public void g(EntityHuman entityhuman) {
         Player player = (Player) entityhuman.getBukkitEntity();
-        if (!player.hasPermission("allow.ride.llama")) {
+        if (!player.hasPermission("ridables.ride.llama")) {
             Lang.send(player, Lang.RIDE_NO_PERMISSION);
             return;
         }
-        if (new RidableMountEvent(this, player).callEvent()) {
+        RidableMountEvent event = new RidableMountEvent(this, player);
+        Bukkit.getPluginManager().callEvent(event);
+        if (!event.isCancelled()) {
             super.g(entityhuman);
             entityhuman.o(false); // setJumping - fixes jump on mount
         }
     }
 
     @Override
-    public boolean removePassenger(Entity passenger, boolean notCancellable) {
+    public boolean removePassenger(Entity passenger) {
         if (passenger instanceof EntityPlayer && !passengers.isEmpty() && passenger == passengers.get(0)) {
-            if (!new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), notCancellable).callEvent() && !notCancellable) {
+            RidableDismountEvent event = new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), false);
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancellable()) {
                 return false; // cancelled
             }
         }
-        return super.removePassenger(passenger, notCancellable);
+        return super.removePassenger(passenger);
+    }
+
+    @Override
+    public boolean isLeashed() {
+        return (config.RIDING_STARTS_CARAVAN && getRider() != null) || super.isLeashed();
+    }
+
+    @Override
+    public Entity getLeashHolder() {
+        EntityPlayer rider = getRider();
+        return rider != null ? rider : super.getLeashHolder();
+    }
+
+    // hasCaravan
+    @Override
+    public boolean eI() {
+        return (config.RIDING_STARTS_CARAVAN && getRider() != null) || super.eI();
+    }
+
+    private static Field didSpit;
+
+    static {
+        try {
+            didSpit = EntityLlama.class.getDeclaredField("bM");
+            didSpit.setAccessible(true);
+        } catch (NoSuchFieldException ignore) {
+        }
+    }
+
+    public static boolean didSpit(EntityLlama llama) {
+        try {
+            return didSpit.getBoolean(llama);
+        } catch (IllegalAccessException ignore) {
+        }
+        return false;
+    }
+
+    public static void didSpit(EntityLlama llama, boolean spit) {
+        try {
+            didSpit.setBoolean(llama, spit);
+        } catch (IllegalAccessException ignore) {
+        }
     }
 }

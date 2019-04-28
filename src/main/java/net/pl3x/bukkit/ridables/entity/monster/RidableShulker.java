@@ -1,22 +1,20 @@
 package net.pl3x.bukkit.ridables.entity.monster;
 
-import net.minecraft.server.v1_13_R2.ControllerLook;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EntityShulker;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.SoundEffects;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.ControllerLook;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityShulker;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.GenericAttributes;
+import net.minecraft.server.v1_14_R1.SoundEffects;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.Lang;
 import net.pl3x.bukkit.ridables.configuration.mob.ShulkerConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASD;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIHurtByTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AILookIdle;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWatchClosest;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASD;
 import net.pl3x.bukkit.ridables.entity.ai.goal.shulker.AIShulkerAttack;
 import net.pl3x.bukkit.ridables.entity.ai.goal.shulker.AIShulkerAttackPlayer;
 import net.pl3x.bukkit.ridables.entity.ai.goal.shulker.AIShulkerDefenseAttack;
@@ -25,7 +23,7 @@ import net.pl3x.bukkit.ridables.entity.projectile.CustomShulkerBullet;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
@@ -36,8 +34,8 @@ public class RidableShulker extends EntityShulker implements RidableEntity {
     private int shootCooldown = 0;
     private int spacebarCooldown = 0;
 
-    public RidableShulker(World world) {
-        super(world);
+    public RidableShulker(EntityTypes<? extends EntityShulker> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new ControllerWASD(this);
         lookController = new ControllerLook(this);
     }
@@ -76,7 +74,7 @@ public class RidableShulker extends EntityShulker implements RidableEntity {
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
+    public boolean be() {
         return CONFIG.RIDING_RIDE_IN_WATER;
     }
 
@@ -182,7 +180,7 @@ public class RidableShulker extends EntityShulker implements RidableEntity {
         }
 
         CraftPlayer player = (CraftPlayer) ((Entity) rider).getBukkitEntity();
-        if (!player.hasPermission("allow.shoot.shulker")) {
+        if (!player.hasPermission("ridables.shoot.shulker")) {
             Lang.send(player, Lang.SHOOT_NO_PERMISSION);
             return false;
         }

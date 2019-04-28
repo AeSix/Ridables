@@ -1,7 +1,7 @@
 package net.pl3x.bukkit.ridables.entity.ai.goal.enderman;
 
-import net.minecraft.server.v1_13_R2.MathHelper;
-import net.minecraft.server.v1_13_R2.PathfinderGoal;
+import net.minecraft.server.v1_14_R1.MathHelper;
+import net.minecraft.server.v1_14_R1.PathfinderGoal;
 import net.pl3x.bukkit.ridables.entity.monster.RidableEnderman;
 
 public class AIEndermanTakeBlock extends PathfinderGoal {

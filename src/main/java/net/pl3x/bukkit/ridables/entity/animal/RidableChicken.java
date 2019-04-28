@@ -1,47 +1,56 @@
 package net.pl3x.bukkit.ridables.entity.animal;
 
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityChicken;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityItem;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.ItemStack;
-import net.minecraft.server.v1_13_R2.Items;
-import net.minecraft.server.v1_13_R2.NBTTagCompound;
-import net.minecraft.server.v1_13_R2.RecipeItemStack;
-import net.minecraft.server.v1_13_R2.SoundEffects;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityChicken;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.Items;
+import net.minecraft.server.v1_14_R1.PathfinderGoalBreed;
+import net.minecraft.server.v1_14_R1.PathfinderGoalFloat;
+import net.minecraft.server.v1_14_R1.PathfinderGoalFollowParent;
+import net.minecraft.server.v1_14_R1.PathfinderGoalLookAtPlayer;
+import net.minecraft.server.v1_14_R1.PathfinderGoalPanic;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomLookaround;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomStrollLand;
+import net.minecraft.server.v1_14_R1.PathfinderGoalTempt;
+import net.minecraft.server.v1_14_R1.RecipeItemStack;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.mob.ChickenConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASD;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIBreed;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIFollowParent;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AILookIdle;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIPanic;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AISwim;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AITempt;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWanderAvoidWater;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWatchClosest;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASD;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityDropItemEvent;
+
+import java.lang.reflect.Field;
 
 public class RidableChicken extends EntityChicken implements RidableEntity {
-    public static final ChickenConfig CONFIG = new ChickenConfig();
-    public static final RecipeItemStack TEMPTATION_ITEMS = RecipeItemStack.a(Items.WHEAT_SEEDS, Items.MELON_SEEDS, Items.PUMPKIN_SEEDS, Items.BEETROOT_SEEDS);
+    private static ChickenConfig config;
+    private static RecipeItemStack breedingItems;
 
-    private int timeUntilNextEgg;
-
-    public RidableChicken(World world) {
-        super(world);
+    public RidableChicken(EntityTypes<? extends EntityChicken> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new ControllerWASD(this);
         lookController = new LookController(this);
-        calculateNewTimeUntilNextEgg();
+
+        if (config == null) {
+            config = getConfig();
+        }
+
+        if (breedingItems == null) {
+            try {
+                Field items = EntityChicken.class.getDeclaredField("bH");
+                items.setAccessible(true);
+                breedingItems = (RecipeItemStack) items.get(this);
+            } catch (NoSuchFieldException | IllegalAccessException ignore) {
+                breedingItems = RecipeItemStack.a(Items.WHEAT_SEEDS, Items.MELON_SEEDS, Items.PUMPKIN_SEEDS, Items.BEETROOT_SEEDS);
+            }
+        }
     }
 
     @Override
@@ -49,98 +58,114 @@ public class RidableChicken extends EntityChicken implements RidableEntity {
         return RidableType.CHICKEN;
     }
 
-    // canDespawn
     @Override
-    public boolean isTypeNotPersistent() {
-        return isChickenJockey() && !isVehicle() && !hasCustomName() && !isLeashed();
+    public ChickenConfig getConfig() {
+        return (ChickenConfig) getType().getConfig();
     }
 
     @Override
-    protected void initAttributes() {
-        super.initAttributes();
-        getAttributeMap().b(RidableType.RIDING_SPEED); // registerAttribute
-        reloadAttributes();
+    public double getRidingSpeed() {
+        return config.RIDING_SPEED;
     }
 
     @Override
-    public void reloadAttributes() {
-        getAttributeInstance(RidableType.RIDING_SPEED).setValue(CONFIG.RIDING_SPEED);
-        getAttributeInstance(GenericAttributes.maxHealth).setValue(CONFIG.MAX_HEALTH);
-        getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(CONFIG.BASE_SPEED);
-        getAttributeInstance(GenericAttributes.FOLLOW_RANGE).setValue(CONFIG.AI_FOLLOW_RANGE);
-    }
+    protected void initPathfinder() {
+        goalSelector.a(0, new PathfinderGoalFloat(this));
+        goalSelector.a(1, new PathfinderGoalPanic(this, 1.4D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
 
-    // initAI - override vanilla AI
-    @Override
-    protected void n() {
-        goalSelector.a(0, new AISwim(this));
-        goalSelector.a(1, new AIPanic(this, 1.4D));
-        goalSelector.a(2, new AIBreed(this, 1.0D, EntityChicken.class));
-        goalSelector.a(3, new AITempt(this, 1.0D, false, TEMPTATION_ITEMS));
-        goalSelector.a(4, new AIFollowParent(this, 1.1D));
-        goalSelector.a(5, new AIWanderAvoidWater(this, 1.0D));
-        goalSelector.a(6, new AIWatchClosest(this, EntityHuman.class, 6.0F));
-        goalSelector.a(7, new AILookIdle(this));
-    }
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(2, new PathfinderGoalBreed(this, 1.0D, EntityChicken.class) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
 
-    // readNBT
-    @Override
-    public void a(NBTTagCompound nbttagcompound) {
-        super.a(nbttagcompound);
-        if (nbttagcompound.hasKey("EggLayTime")) {
-            timeUntilNextEgg = nbttagcompound.getInt("EggLayTime");
-        }
-    }
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(3, new PathfinderGoalTempt(this, 1.0D, false, breedingItems) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
 
-    // writeNBT
-    @Override
-    public void b(NBTTagCompound nbttagcompound) {
-        super.b(nbttagcompound);
-        nbttagcompound.setInt("EggLayTime", timeUntilNextEgg);
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(4, new PathfinderGoalFollowParent(this, 1.1D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(5, new PathfinderGoalRandomStrollLand(this, 1.0D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(6, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(7, new PathfinderGoalRandomLookaround(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
     }
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
-        return CONFIG.RIDING_RIDE_IN_WATER;
+    public boolean be() {
+        return config.RIDING_RIDE_IN_WATER;
     }
 
     // getJumpUpwardsMotion
     @Override
-    protected float cG() {
-        return getRider() == null ? CONFIG.AI_JUMP_POWER : CONFIG.RIDING_JUMP_POWER;
+    protected float cW() {
+        return getRider() == null ? super.cW() : config.RIDING_JUMP_POWER;
     }
 
     @Override
     protected void mobTick() {
-        Q = getRider() == null ? CONFIG.AI_STEP_HEIGHT : CONFIG.RIDING_STEP_HEIGHT;
+        K = getRider() == null ? 0.6F : config.RIDING_STEP_HEIGHT;
         super.mobTick();
     }
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 
     // onLivingUpdate
     @Override
     public void movementTick() {
-        bI = 6000; // disable vanilla timeUntilNextEgg tick counter;
-        if (getRider() == null || CONFIG.RIDING_DROP_EGGS) {
-            timeUntilNextEgg--;
-        }
-        if (!isBaby() && !isChickenJockey() && timeUntilNextEgg <= 0) {
-            a(SoundEffects.ENTITY_CHICKEN_EGG, 1.0F, (random.nextFloat() - random.nextFloat()) * 0.2F + 1.0F); // playSound
-            EntityItem egg = new EntityItem(world, locX, locY, locZ, new ItemStack(Items.EGG));
-            egg.n(); // setDefaultPickupDelay
-            EntityDropItemEvent event = new EntityDropItemEvent(getBukkitEntity(), (org.bukkit.entity.Item) egg.getBukkitEntity());
-            Bukkit.getPluginManager().callEvent(event);
-            if (!event.isCancelled()) {
-                world.addEntity(egg);
-            }
-            calculateNewTimeUntilNextEgg();
+        if (getRider() != null && !config.RIDING_DROP_EGGS) {
+            eggLayTime++; // add a tick to prevent egg dropping
         }
         super.movementTick();
     }
@@ -152,25 +177,23 @@ public class RidableChicken extends EntityChicken implements RidableEntity {
             return true; // handled by vanilla action
         }
         if (hand == EnumHand.MAIN_HAND && !entityhuman.isSneaking() && passengers.isEmpty() && !entityhuman.isPassenger()) {
-            if (!CONFIG.RIDING_BABIES && isBaby()) {
+            if (!config.RIDING_BABIES && isBaby()) {
                 return false; // do not ride babies
             }
-            return tryRide(entityhuman, CONFIG.RIDING_SADDLE_REQUIRE, CONFIG.RIDING_SADDLE_CONSUME);
+            return tryRide(entityhuman, config.RIDING_SADDLE_REQUIRE, config.RIDING_SADDLE_CONSUME);
         }
         return false;
     }
 
     @Override
-    public boolean removePassenger(Entity passenger, boolean notCancellable) {
+    public boolean removePassenger(Entity passenger) {
         if (passenger instanceof EntityPlayer && !passengers.isEmpty() && passenger == passengers.get(0)) {
-            if (!new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), notCancellable).callEvent() && !notCancellable) {
+            RidableDismountEvent event = new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), false);
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancellable()) {
                 return false; // cancelled
             }
         }
-        return super.removePassenger(passenger, notCancellable);
-    }
-
-    private void calculateNewTimeUntilNextEgg() {
-        timeUntilNextEgg = random.nextInt((CONFIG.RIDING_DROP_EGGS_DELAY_MAX - CONFIG.RIDING_DROP_EGGS_DELAY_MIN) + 1) + CONFIG.RIDING_DROP_EGGS_DELAY_MIN;
+        return super.removePassenger(passenger);
     }
 }

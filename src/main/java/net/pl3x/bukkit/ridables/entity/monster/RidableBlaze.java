@@ -1,45 +1,58 @@
 package net.pl3x.bukkit.ridables.entity.monster;
 
-import net.minecraft.server.v1_13_R2.BlockPosition;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityBlaze;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.SoundEffects;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.AttributeInstance;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityBlaze;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityLiving;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.GenericAttributes;
+import net.minecraft.server.v1_14_R1.MathHelper;
+import net.minecraft.server.v1_14_R1.PathfinderGoal;
+import net.minecraft.server.v1_14_R1.PathfinderGoalHurtByTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalLookAtPlayer;
+import net.minecraft.server.v1_14_R1.PathfinderGoalMoveTowardsRestriction;
+import net.minecraft.server.v1_14_R1.PathfinderGoalNearestAttackableTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomLookaround;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomStrollLand;
+import net.minecraft.server.v1_14_R1.SoundEffects;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.Lang;
 import net.pl3x.bukkit.ridables.configuration.mob.BlazeConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
+import net.pl3x.bukkit.ridables.entity.RidableFlyingEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASDFlyingWithSpacebar;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAttackNearest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIHurtByTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AILookIdle;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIMoveTowardsRestriction;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWanderAvoidWater;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWatchClosest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.blaze.AIBlazeFireballAttack;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASDFlyingWithSpacebar;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.entity.projectile.CustomFireball;
 import net.pl3x.bukkit.ridables.event.BlazeShootFireballEvent;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
-public class RidableBlaze extends EntityBlaze implements RidableEntity {
-    public static final BlazeConfig CONFIG = new BlazeConfig();
+import java.util.EnumSet;
+
+public class RidableBlaze extends EntityBlaze implements RidableEntity, RidableFlyingEntity {
+    private static BlazeConfig config;
 
     private int shootCooldown = 0;
 
-    public RidableBlaze(World world) {
-        super(world);
+    public RidableBlaze(EntityTypes<? extends EntityBlaze> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new ControllerWASDFlyingWithSpacebar(this, 0.5D);
         lookController = new LookController(this);
+
+        if (config == null) {
+            config = getConfig();
+        }
     }
 
     @Override
@@ -47,53 +60,161 @@ public class RidableBlaze extends EntityBlaze implements RidableEntity {
         return RidableType.BLAZE;
     }
 
-    // isNoDespawnRequired
     @Override
-    public boolean isPersistent() {
-        return persistent;
-    }
-
-    // canDespawn
-    @Override
-    public boolean isTypeNotPersistent() {
-        return !hasCustomName() && !isLeashed();
+    public BlazeConfig getConfig() {
+        return (BlazeConfig) getType().getConfig();
     }
 
     @Override
-    protected void initAttributes() {
-        super.initAttributes();
-        getAttributeMap().b(RidableType.RIDING_SPEED); // registerAttribute
-        getAttributeMap().b(RidableType.RIDING_MAX_Y); // registerAttribute
-        reloadAttributes();
+    public double getRidingSpeed() {
+        return config.RIDING_SPEED;
     }
 
     @Override
-    public void reloadAttributes() {
-        getAttributeInstance(RidableType.RIDING_SPEED).setValue(CONFIG.RIDING_SPEED);
-        getAttributeInstance(RidableType.RIDING_MAX_Y).setValue(CONFIG.RIDING_FLYING_MAX_Y);
-        getAttributeInstance(GenericAttributes.maxHealth).setValue(CONFIG.MAX_HEALTH);
-        getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(CONFIG.BASE_SPEED);
-        getAttributeInstance(GenericAttributes.ATTACK_DAMAGE).setValue(CONFIG.AI_MELEE_DAMAGE);
-        getAttributeInstance(GenericAttributes.FOLLOW_RANGE).setValue(CONFIG.AI_FOLLOW_RANGE);
+    public int getMaxY() {
+        return config.RIDING_FLYING_MAX_Y;
     }
 
-    // initAI - override vanilla AI
     @Override
-    protected void n() {
-        goalSelector.a(4, new AIBlazeFireballAttack(this));
-        goalSelector.a(5, new AIMoveTowardsRestriction(this, 1.0D));
-        goalSelector.a(7, new AIWanderAvoidWater(this, 1.0D, 0.0F));
-        goalSelector.a(8, new AIWatchClosest(this, EntityHuman.class, 8.0F));
-        goalSelector.a(8, new AILookIdle(this));
-        targetSelector.a(1, new AIHurtByTarget(this, true));
-        targetSelector.a(2, new AIAttackNearest<>(this, EntityHuman.class, true));
+    protected void initPathfinder() {
+        PathfinderGoal blazeFireballAttack = new PathfinderGoal() {
+            private EntityLiving target;
+            private int attackStep;
+            private int attackTime;
+
+            public boolean a() { // shouldExecute
+                target = getGoalTarget();
+                return target != null && target.isAlive() && getRider() != null;
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return a();
+            }
+
+            public void c() { // startExecuting
+                attackStep = 0;
+            }
+
+            public void d() { // resetTask
+                r(false); // setOnFire
+            }
+
+            public void e() { // tick
+                --attackTime;
+                double distance = h(target);
+                if (distance < 4.0D) {
+                    if (attackTime <= 0) {
+                        attackTime = 20;
+                        C(target); // attackEnemyAsMob
+                    }
+                    getControllerMove().a(target.locX, target.locY, target.locZ, 1.0D);
+                } else if (distance < g() * g()) {
+                    double x = target.locX - locX;
+                    double y = target.getBoundingBox().minY + (double) (target.getHeight() / 2.0F) - (locY + (double) (getHeight() / 2.0F));
+                    double z = target.locZ - locZ;
+                    if (attackTime <= 0) {
+                        ++attackStep;
+                        if (attackStep == 1) {
+                            attackTime = 60;
+                            r(true); // setOnFire
+                        } else if (attackStep <= 4) {
+                            attackTime = 6;
+                        } else {
+                            attackTime = 100;
+                            attackStep = 0;
+                            r(false); // setOnFire
+                        }
+                        if (attackStep > 1) {
+                            float f = MathHelper.c(MathHelper.sqrt(distance)) * 0.5F;
+                            world.a(null, 1018, new BlockPosition((int) locX, (int) locY, (int) locZ), 0);
+                            for (int i = 0; i < 1; ++i) {
+                                CustomFireball fireball = new CustomFireball(world, RidableBlaze.this, null, x + random.nextGaussian() * (double) f, y, z + random.nextGaussian() * (double) f, 1, 0, false);
+                                fireball.locY = locY + (double) (getHeight() / 2.0F) + 0.5D;
+                                BlazeShootFireballEvent event = new BlazeShootFireballEvent(RidableBlaze.this, fireball);
+                                Bukkit.getPluginManager().callEvent(event);
+                                if (!event.isCancelled()) {
+                                    world.addEntity(fireball);
+                                }
+                            }
+                        }
+                    }
+                    getControllerLook().a(target, 10.0F, 10.0F);
+                } else {
+                    getNavigation().o(); // clearPath
+                    getControllerMove().a(target.locX, target.locY, target.locZ, 1.0D);
+                }
+                super.e();
+            }
+
+            private double g() { // getFollowDistance
+                AttributeInstance range = getAttributeInstance(GenericAttributes.FOLLOW_RANGE);
+                return range == null ? 16.0D : range.getValue();
+            }
+        };
+        blazeFireballAttack.a(EnumSet.of(PathfinderGoal.Type.MOVE, PathfinderGoal.Type.LOOK));
+
+        goalSelector.a(4, blazeFireballAttack);
+        goalSelector.a(5, new PathfinderGoalMoveTowardsRestriction(this, 1.0D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(7, new PathfinderGoalRandomStrollLand(this, 1.0D, 0.0F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(8, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 8.0F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(8, new PathfinderGoalRandomLookaround(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        targetSelector.a(1, new PathfinderGoalHurtByTarget(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        }.a(new Class[0]));
+        targetSelector.a(2, new PathfinderGoalNearestAttackableTarget<EntityHuman>(this, EntityHuman.class, true) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
     }
 
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
-        return CONFIG.RIDING_RIDE_IN_WATER;
+    public boolean be() {
+        return config.RIDING_RIDE_IN_WATER;
     }
 
     @Override
@@ -102,15 +223,15 @@ public class RidableBlaze extends EntityBlaze implements RidableEntity {
             shootCooldown--;
         }
         if (getRider() != null) {
-            motY += bi > 0 ? 0.07D * CONFIG.RIDING_VERTICAL : 0.04704D - CONFIG.RIDING_GRAVITY; // moveVertical
+            setMot(getMot().add(0.0D, bi > 0 ? 0.07D * config.RIDING_VERTICAL : 0.04704D - config.RIDING_GRAVITY, 0.0D));
         }
         super.mobTick();
     }
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 
@@ -121,19 +242,21 @@ public class RidableBlaze extends EntityBlaze implements RidableEntity {
             return true; // handled by vanilla action
         }
         if (hand == EnumHand.MAIN_HAND && !entityhuman.isSneaking() && passengers.isEmpty() && !entityhuman.isPassenger()) {
-            return tryRide(entityhuman, CONFIG.RIDING_SADDLE_REQUIRE, CONFIG.RIDING_SADDLE_CONSUME);
+            return tryRide(entityhuman, config.RIDING_SADDLE_REQUIRE, config.RIDING_SADDLE_CONSUME);
         }
         return false;
     }
 
     @Override
-    public boolean removePassenger(Entity passenger, boolean notCancellable) {
+    public boolean removePassenger(Entity passenger) {
         if (passenger instanceof EntityPlayer && !passengers.isEmpty() && passenger == passengers.get(0)) {
-            if (!new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), notCancellable).callEvent() && !notCancellable) {
+            RidableDismountEvent event = new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), false);
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancellable()) {
                 return false; // cancelled
             }
         }
-        return super.removePassenger(passenger, notCancellable);
+        return super.removePassenger(passenger);
     }
 
     @Override
@@ -162,14 +285,14 @@ public class RidableBlaze extends EntityBlaze implements RidableEntity {
     }
 
     public boolean shoot(EntityPlayer rider) {
-        shootCooldown = CONFIG.RIDING_SHOOT_COOLDOWN;
+        shootCooldown = config.RIDING_SHOOT_COOLDOWN;
 
         if (rider == null) {
             return false;
         }
 
         CraftPlayer player = rider.getBukkitEntity();
-        if (!player.hasPermission("allow.shoot.blaze")) {
+        if (!player.hasPermission("ridables.shoot.blaze")) {
             Lang.send(player, Lang.SHOOT_NO_PERMISSION);
             return false;
         }
@@ -177,10 +300,11 @@ public class RidableBlaze extends EntityBlaze implements RidableEntity {
         Vector direction = player.getEyeLocation().getDirection().normalize().multiply(25).add(new Vector(0, 1, 0));
 
         CustomFireball fireball = new CustomFireball(world, this, rider, direction.getX(), direction.getY(), direction.getZ(),
-                CONFIG.RIDING_SHOOT_SPEED, CONFIG.RIDING_SHOOT_IMPACT_DAMAGE, CONFIG.RIDING_SHOOT_GRIEF);
-        fireball.isIncendiary = CONFIG.RIDING_SHOOT_EXPLOSION_FIRE;
+                config.RIDING_SHOOT_SPEED, config.RIDING_SHOOT_IMPACT_DAMAGE, config.RIDING_SHOOT_GRIEF);
+        fireball.isIncendiary = config.RIDING_SHOOT_EXPLOSION_FIRE;
 
-        if (!new BlazeShootFireballEvent(this, fireball).callEvent()) {
+        BlazeShootFireballEvent event = new BlazeShootFireballEvent(this, fireball);
+        if (event.isCancelled()) {
             return false; // cancelled
         }
 

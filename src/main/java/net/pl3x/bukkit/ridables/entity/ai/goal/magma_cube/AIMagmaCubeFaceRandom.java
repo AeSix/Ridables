@@ -1,8 +1,8 @@
 package net.pl3x.bukkit.ridables.entity.ai.goal.magma_cube;
 
 import com.destroystokyo.paper.event.entity.SlimeChangeDirectionEvent;
-import net.minecraft.server.v1_13_R2.MobEffects;
-import net.minecraft.server.v1_13_R2.PathfinderGoal;
+import net.minecraft.server.v1_14_R1.MobEffects;
+import net.minecraft.server.v1_14_R1.PathfinderGoal;
 import net.pl3x.bukkit.ridables.entity.monster.slime.RidableMagmaCube;
 import org.bukkit.entity.Slime;
 

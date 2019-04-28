@@ -1,38 +1,53 @@
 package net.pl3x.bukkit.ridables.entity.monster;
 
-import net.minecraft.server.v1_13_R2.ControllerMove;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityInsentient;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EntityVex;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.MathHelper;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.ControllerMove;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityCreature;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityInsentient;
+import net.minecraft.server.v1_14_R1.EntityLiving;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityRaider;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EntityVex;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.MathHelper;
+import net.minecraft.server.v1_14_R1.PathfinderGoal;
+import net.minecraft.server.v1_14_R1.PathfinderGoalFloat;
+import net.minecraft.server.v1_14_R1.PathfinderGoalHurtByTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalLookAtPlayer;
+import net.minecraft.server.v1_14_R1.PathfinderGoalNearestAttackableTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalTarget;
+import net.minecraft.server.v1_14_R1.PathfinderTargetCondition;
+import net.minecraft.server.v1_14_R1.SoundEffects;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.mob.VexConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
+import net.pl3x.bukkit.ridables.entity.RidableFlyingEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASDFlying;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAttackNearest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIHurtByTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AISwim;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWatchClosest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.vex.AIVexChargeAttack;
-import net.pl3x.bukkit.ridables.entity.ai.goal.vex.AIVexCopyOwnerTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.vex.AIVexMoveRandom;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASDFlying;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
 import net.pl3x.bukkit.ridables.util.Const;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityTargetEvent;
 
-public class RidableVex extends EntityVex implements RidableEntity {
-    public static final VexConfig CONFIG = new VexConfig();
+import java.util.EnumSet;
 
-    public RidableVex(World world) {
-        super(world);
+public class RidableVex extends EntityVex implements RidableEntity, RidableFlyingEntity {
+    private static VexConfig config;
+
+    public RidableVex(EntityTypes<? extends EntityVex> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new VexWASDController(this);
         lookController = new LookController(this);
+
+        if (config == null) {
+            config = getConfig();
+        }
     }
 
     @Override
@@ -40,59 +55,81 @@ public class RidableVex extends EntityVex implements RidableEntity {
         return RidableType.VEX;
     }
 
-    // canDespawn
     @Override
-    public boolean isTypeNotPersistent() {
-        return !hasCustomName() && !isLeashed();
+    public VexConfig getConfig() {
+        return (VexConfig) getType().getConfig();
     }
 
     @Override
-    protected void initAttributes() {
-        super.initAttributes();
-        getAttributeMap().b(RidableType.RIDING_SPEED); // registerAttribute
-        getAttributeMap().b(RidableType.RIDING_MAX_Y); // registerAttribute
-        reloadAttributes();
+    public double getRidingSpeed() {
+        return config.RIDING_SPEED;
     }
 
     @Override
-    public void reloadAttributes() {
-        getAttributeInstance(RidableType.RIDING_SPEED).setValue(CONFIG.RIDING_SPEED);
-        getAttributeInstance(RidableType.RIDING_MAX_Y).setValue(CONFIG.RIDING_FLYING_MAX_Y);
-        getAttributeInstance(GenericAttributes.maxHealth).setValue(CONFIG.MAX_HEALTH);
-        getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(CONFIG.BASE_SPEED);
-        getAttributeInstance(GenericAttributes.ATTACK_DAMAGE).setValue(CONFIG.AI_MELEE_DAMAGE);
-        getAttributeInstance(GenericAttributes.FOLLOW_RANGE).setValue(CONFIG.AI_FOLLOW_RANGE);
+    public int getMaxY() {
+        return config.RIDING_FLYING_MAX_Y;
     }
 
-    // initAI - override vanilla AI
     @Override
-    protected void n() {
-        goalSelector.a(0, new AISwim(this));
-        goalSelector.a(4, new AIVexChargeAttack(this));
-        goalSelector.a(8, new AIVexMoveRandom(this));
-        goalSelector.a(9, new AIWatchClosest(this, EntityHuman.class, 3.0F, 1.0F));
-        goalSelector.a(10, new AIWatchClosest(this, EntityInsentient.class, 8.0F));
-        targetSelector.a(1, new AIHurtByTarget(this, true, EntityVex.class));
-        targetSelector.a(2, new AIVexCopyOwnerTarget(this));
-        targetSelector.a(3, new AIAttackNearest<>(this, EntityHuman.class, true));
+    protected void initPathfinder() {
+        goalSelector.a(0, new PathfinderGoalFloat(this));
+        goalSelector.a(4, new AIChargeAttack());
+        goalSelector.a(8, new AIMoveRandom());
+        goalSelector.a(9, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 3.0F, 1.0F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(10, new PathfinderGoalLookAtPlayer(this, EntityInsentient.class, 8.0F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        targetSelector.a(1, new PathfinderGoalHurtByTarget(this, EntityRaider.class) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        }.a(new Class[0]));
+        targetSelector.a(2, new AICopyOwnerTarget(this));
+        targetSelector.a(3, new PathfinderGoalNearestAttackableTarget<EntityHuman>(this, EntityHuman.class, true) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
     }
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
-        return CONFIG.RIDING_RIDE_IN_WATER;
+    public boolean be() {
+        return config.RIDING_RIDE_IN_WATER;
     }
 
     @Override
     public void movementTick() {
-        noclip = getRider() == null || CONFIG.RIDING_NO_CLIP;
+        noclip = getRider() == null || config.RIDING_NO_CLIP;
         super.movementTick();
     }
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 
@@ -103,31 +140,33 @@ public class RidableVex extends EntityVex implements RidableEntity {
             return true; // handled by vanilla action
         }
         if (hand == EnumHand.MAIN_HAND && !entityhuman.isSneaking() && passengers.isEmpty() && !entityhuman.isPassenger()) {
-            return tryRide(entityhuman, CONFIG.RIDING_SADDLE_REQUIRE, CONFIG.RIDING_SADDLE_CONSUME);
+            return tryRide(entityhuman, config.RIDING_SADDLE_REQUIRE, config.RIDING_SADDLE_CONSUME);
         }
         return false;
     }
 
     @Override
-    public boolean removePassenger(Entity passenger, boolean notCancellable) {
+    public boolean removePassenger(Entity passenger) {
         if (passenger instanceof EntityPlayer && !passengers.isEmpty() && passenger == passengers.get(0)) {
-            if (!new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), notCancellable).callEvent() && !notCancellable) {
+            RidableDismountEvent event = new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), false);
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancellable()) {
                 return false; // cancelled
             }
         }
-        return super.removePassenger(passenger, notCancellable);
+        return super.removePassenger(passenger);
     }
 
     // fall
     @Override
-    public void c(float f, float f1) {
+    public void b(float f, float f1) {
         // no fall damage
     }
 
     static class VexWASDController extends ControllerWASDFlying {
         private final RidableVex vex;
 
-        public VexWASDController(RidableVex vex) {
+        VexWASDController(RidableVex vex) {
             super(vex);
             this.vex = vex;
         }
@@ -135,30 +174,139 @@ public class RidableVex extends EntityVex implements RidableEntity {
         @Override
         public void tick(EntityPlayer rider) {
             super.tick(rider);
-            vex.noclip = CONFIG.RIDING_NO_CLIP;
+            vex.noclip = config.RIDING_NO_CLIP;
         }
 
         @Override
         public void tick() {
-            if (this.h == ControllerMove.Operation.MOVE_TO) {
-                double x = b - vex.locX;
-                double y = c - vex.locY;
-                double z = d - vex.locZ;
-                double distance = MathHelper.sqrt(x * x + y * y + z * z);
+            if (h == ControllerMove.Operation.MOVE_TO) {
+                Vec3D velocity = new Vec3D(b - vex.locX, c - vex.locY, d - vex.locZ);
+                double distance = velocity.f();
                 if (distance < vex.getBoundingBox().a()) { // getAverageEdgeLength
                     h = ControllerMove.Operation.WAIT;
-                    vex.motX *= 0.5D;
-                    vex.motY *= 0.5D;
-                    vex.motZ *= 0.5D;
+                    vex.setMot(vex.getMot().a(0.5D));
                 } else {
-                    vex.motX += x / distance * 0.05D * e;
-                    vex.motY += y / distance * 0.05D * e;
-                    vex.motZ += z / distance * 0.05D * e;
+                    vex.setMot(vex.getMot().e(velocity.a(e * 0.05D / distance)));
                     if (vex.getGoalTarget() == null) {
-                        vex.aQ = vex.yaw = -((float) MathHelper.c(vex.motX, vex.motZ)) * Const.RAD2DEG_FLOAT;
+                        Vec3D mot = vex.getMot();
+                        vex.aK = vex.yaw = -((float) MathHelper.d(mot.x, mot.z)) * Const.RAD2DEG_FLOAT;
                     } else {
-                        vex.aQ = vex.yaw = -((float) MathHelper.c(vex.getGoalTarget().locX - vex.locX, vex.getGoalTarget().locZ - vex.locZ)) * Const.RAD2DEG_FLOAT;
+                        vex.aK = vex.yaw = -((float) MathHelper.d(vex.getGoalTarget().locX - vex.locX, vex.getGoalTarget().locZ - vex.locZ)) * Const.RAD2DEG_FLOAT;
                     }
+                }
+            }
+        }
+    }
+
+    class AICopyOwnerTarget extends PathfinderGoalTarget {
+        private final PathfinderTargetCondition b = (new PathfinderTargetCondition()).c().e();
+
+        AICopyOwnerTarget(EntityCreature entitycreature) {
+            super(entitycreature, false);
+        }
+
+        // shouldExecute
+        @Override
+        public boolean a() {
+            return getRider() == null && l() != null && l().getGoalTarget() != null && a(l().getGoalTarget(), this.b);
+        }
+
+        // shouldContinueExecuting
+        @Override
+        public boolean b() {
+            return getRider() == null && super.b();
+        }
+
+        // startExecuting
+        @Override
+        public void c() {
+            setGoalTarget(l().getGoalTarget(), EntityTargetEvent.TargetReason.OWNER_ATTACKED_TARGET, true);
+            super.c();
+        }
+    }
+
+    class AIMoveRandom extends PathfinderGoal {
+        AIMoveRandom() {
+            a(EnumSet.of(PathfinderGoal.Type.MOVE));
+        }
+
+        // shouldExecute
+        @Override
+        public boolean a() {
+            return getRider() == null && !getControllerMove().b() && random.nextInt(7) == 0;
+        }
+
+        // shouldContinueExecuting
+        @Override
+        public boolean b() {
+            return false;
+        }
+
+        // tick
+        @Override
+        public void e() {
+            BlockPosition pos = dW();
+            if (pos == null) {
+                pos = new BlockPosition(RidableVex.this);
+            }
+            for (int i = 0; i < 3; ++i) {
+                BlockPosition pos1 = pos.b(random.nextInt(15) - 7, random.nextInt(11) - 5, random.nextInt(15) - 7);
+                if (world.isEmpty(pos1)) {
+                    moveController.a((double) pos1.getX() + 0.5D, (double) pos1.getY() + 0.5D, (double) pos1.getZ() + 0.5D, 0.25D);
+                    if (getGoalTarget() == null) {
+                        getControllerLook().a((double) pos1.getX() + 0.5D, (double) pos1.getY() + 0.5D, (double) pos1.getZ() + 0.5D, 180.0F, 20.0F);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    class AIChargeAttack extends PathfinderGoal {
+        AIChargeAttack() {
+            a(EnumSet.of(PathfinderGoal.Type.MOVE));
+        }
+
+        // shouldExecute
+        @Override
+        public boolean a() {
+            return getRider() == null && getGoalTarget() != null && !getControllerMove().b() && random.nextInt(7) == 0 && h(getGoalTarget()) > 4.0D;
+        }
+
+        // shouldContinueExecuting
+        @Override
+        public boolean b() {
+            return getRider() == null && getControllerMove().b() && isCharging() && getGoalTarget() != null && getGoalTarget().isAlive();
+        }
+
+        // startExecuting
+        @Override
+        public void c() {
+            EntityLiving target = getGoalTarget();
+            Vec3D vec3d = target.j(1.0F);
+            moveController.a(vec3d.x, vec3d.y, vec3d.z, 1.0D);
+            setCharging(true);
+            RidableVex.this.a(SoundEffects.ENTITY_VEX_CHARGE, 1.0F, 1.0F);
+        }
+
+        // resetTask
+        @Override
+        public void d() {
+            setCharging(false);
+        }
+
+        // tick
+        @Override
+        public void e() {
+            EntityLiving target = getGoalTarget();
+            if (getBoundingBox().c(target.getBoundingBox())) {
+                C(target);
+                setCharging(false);
+            } else {
+                double d0 = h(target);
+                if (d0 < 9.0D) {
+                    Vec3D vec3d = target.j(1.0F);
+                    moveController.a(vec3d.x, vec3d.y, vec3d.z, 1.0D);
                 }
             }
         }

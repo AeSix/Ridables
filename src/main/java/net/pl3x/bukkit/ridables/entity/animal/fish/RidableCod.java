@@ -1,49 +1,44 @@
 package net.pl3x.bukkit.ridables.entity.animal.fish;
 
-import net.minecraft.server.v1_13_R2.ControllerMove;
-import net.minecraft.server.v1_13_R2.DataWatcherObject;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityCod;
-import net.minecraft.server.v1_13_R2.EntityFish;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.IEntitySelector;
-import net.minecraft.server.v1_13_R2.MathHelper;
-import net.minecraft.server.v1_13_R2.TagsFluid;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.ControllerMove;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityCod;
+import net.minecraft.server.v1_14_R1.EntityFish;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.GenericAttributes;
+import net.minecraft.server.v1_14_R1.IEntitySelector;
+import net.minecraft.server.v1_14_R1.MathHelper;
+import net.minecraft.server.v1_14_R1.PathfinderGoalAvoidTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalFishSchool;
+import net.minecraft.server.v1_14_R1.PathfinderGoalPanic;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomSwim;
+import net.minecraft.server.v1_14_R1.TagsFluid;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.mob.CodConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASDWater;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAvoidTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIPanic;
-import net.pl3x.bukkit.ridables.entity.ai.goal.fish.AIFishFollowLeader;
-import net.pl3x.bukkit.ridables.entity.ai.goal.fish.AIFishSwim;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASDWater;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
+import net.pl3x.bukkit.ridables.util.Const;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.lang.reflect.Field;
-
 public class RidableCod extends EntityCod implements RidableEntity, RidableFishSchool {
-    public static final CodConfig CONFIG = new CodConfig();
+    private static CodConfig config;
 
-    static Field fromBucket;
-
-    static {
-        try {
-            fromBucket = EntityFish.class.getDeclaredField("a");
-            fromBucket.setAccessible(true);
-        } catch (NoSuchFieldException ignore) {
-        }
-    }
-
-    public RidableCod(World world) {
-        super(world);
+    public RidableCod(EntityTypes<? extends EntityCod> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new FishWASDController(this);
         lookController = new LookController(this);
+
+        if (config == null) {
+            config = getConfig();
+        }
     }
 
     @Override
@@ -51,75 +46,66 @@ public class RidableCod extends EntityCod implements RidableEntity, RidableFishS
         return RidableType.COD;
     }
 
-    // isNoDespawnRequired
     @Override
-    public boolean isPersistent() {
-        return isFromBucket() || persistent;
-    }
-
-    // canDespawn
-    @Override
-    public boolean isTypeNotPersistent() {
-        return !isFromBucket() && !hasCustomName() && !isLeashed();
+    public CodConfig getConfig() {
+        return (CodConfig) getType().getConfig();
     }
 
     @Override
-    public void setFromBucket(boolean flag) {
-        try {
-            datawatcher.set((DataWatcherObject<? super Boolean>) RidableCod.fromBucket.get(this), flag);
-        } catch (IllegalAccessException e) {
-            super.setFromBucket(flag);
-        }
+    public double getRidingSpeed() {
+        return config.RIDING_SPEED;
     }
 
     @Override
-    protected void initAttributes() {
-        super.initAttributes();
-        getAttributeMap().b(RidableType.RIDING_SPEED); // registerAttribute
-        reloadAttributes();
-    }
-
-    @Override
-    public void reloadAttributes() {
-        getAttributeInstance(RidableType.RIDING_SPEED).setValue(CONFIG.RIDING_SPEED);
-        getAttributeInstance(GenericAttributes.maxHealth).setValue(CONFIG.MAX_HEALTH);
-        getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(CONFIG.BASE_SPEED);
-        getAttributeInstance(GenericAttributes.FOLLOW_RANGE).setValue(CONFIG.AI_FOLLOW_RANGE);
-    }
-
-    // initAI - override vanilla AI
-    @Override
-    protected void n() {
+    protected void initPathfinder() {
         // from EntityFish
-        if (CONFIG.AI_PANIC_SPEED > 0) {
-            goalSelector.a(0, new AIPanic(this, CONFIG.AI_PANIC_SPEED));
-        }
-        if (CONFIG.AI_AVOID_PLAYER_DISTANCE > 0) {
-            goalSelector.a(2, new AIAvoidTarget<>(this, EntityHuman.class, CONFIG.AI_AVOID_PLAYER_DISTANCE, CONFIG.AI_AVOID_PLAYER_SPEED_FAR, CONFIG.AI_AVOID_PLAYER_SPEED_NEAR, IEntitySelector.notSpectator()));
-        }
-        goalSelector.a(4, new AIFishSwim(this));
+        goalSelector.a(0, new PathfinderGoalPanic(this, 1.25D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
 
-        // from EntityCod
-        if (CONFIG.AI_FOLLOW_SCHOOL) {
-            goalSelector.a(5, new AIFishFollowLeader(this));
-        }
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(2, new PathfinderGoalAvoidTarget<EntityHuman>(this, EntityHuman.class, 8.0F, 1.6D, 1.4D, IEntitySelector.f::test) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(4, new RidableCod.AIFishSwim(this));
+
+        // from EntityFishSchool
+        goalSelector.a(5, new PathfinderGoalFishSchool(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
     }
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
+    public boolean be() {
         return true;
     }
 
     @Override
-    public boolean isFollowing() {
-        return dy();
+    public boolean isNotFollowing() {
+        return dV();
     }
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 
@@ -127,7 +113,7 @@ public class RidableCod extends EntityCod implements RidableEntity, RidableFishS
     @Override
     public void movementTick() {
         if (getRider() != null) {
-            motY += 0.005D;
+            setMot(getMot().add(0.0D, 0.005D, 0.0D));
         }
         super.movementTick();
     }
@@ -139,25 +125,27 @@ public class RidableCod extends EntityCod implements RidableEntity, RidableFishS
             return true; // handled by vanilla action
         }
         if (hand == EnumHand.MAIN_HAND && !entityhuman.isSneaking() && passengers.isEmpty() && !entityhuman.isPassenger()) {
-            return tryRide(entityhuman, CONFIG.RIDING_SADDLE_REQUIRE, CONFIG.RIDING_SADDLE_CONSUME);
+            return tryRide(entityhuman, config.RIDING_SADDLE_REQUIRE, config.RIDING_SADDLE_CONSUME);
         }
         return false;
     }
 
     @Override
-    public boolean removePassenger(Entity passenger, boolean notCancellable) {
+    public boolean removePassenger(Entity passenger) {
         if (passenger instanceof EntityPlayer && !passengers.isEmpty() && passenger == passengers.get(0)) {
-            if (!new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), notCancellable).callEvent() && !notCancellable) {
+            RidableDismountEvent event = new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), false);
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancellable()) {
                 return false; // cancelled
             }
         }
-        return super.removePassenger(passenger, notCancellable);
+        return super.removePassenger(passenger);
     }
 
-    public static class FishWASDController extends ControllerWASDWater {
+    static class FishWASDController extends ControllerWASDWater {
         private final EntityFish fish;
 
-        public FishWASDController(RidableEntity ridable) {
+        FishWASDController(RidableEntity ridable) {
             super(ridable);
             this.fish = (EntityFish) ridable;
         }
@@ -165,19 +153,42 @@ public class RidableCod extends EntityCod implements RidableEntity, RidableFishS
         @Override
         public void tick() {
             if (fish.a(TagsFluid.WATER)) {
-                fish.motY += 0.005D;
+                fish.setMot(fish.getMot().add(0.0D, 0.005D, 0.0D));
             }
-            if (h == ControllerMove.Operation.MOVE_TO && !fish.getNavigation().p()) {
+            if (h == ControllerMove.Operation.MOVE_TO && !fish.getNavigation().n()) {
                 double x = b - fish.locX;
                 double y = c - fish.locY;
                 double z = d - fish.locZ;
                 y /= (double) MathHelper.sqrt(x * x + y * y + z * z);
-                fish.aQ = fish.yaw = a(fish.yaw, (float) (MathHelper.c(z, x) * (double) (180F / (float) Math.PI)) - 90.0F, 90.0F);
-                fish.o(fish.cK() + ((float) (e * fish.getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).getValue()) - fish.cK()) * 0.125F);
-                fish.motY += (double) fish.cK() * y * 0.1D;
+                fish.aK = fish.yaw = a(fish.yaw, (float) (MathHelper.d(z, x) * Const.RAD2DEG) - 90.0F, 90.0F);
+                fish.o(MathHelper.g(0.125F, fish.da(), (float) (e * fish.getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).getValue())));
+                fish.setMot(fish.getMot().add(0.0D, fish.da() * y * 0.1D, 0.0D));
             } else {
                 fish.o(0.0F);
             }
+        }
+    }
+
+    static class AIFishSwim extends PathfinderGoalRandomSwim {
+        private final RidableEntity ridable;
+        private final RidableFishSchool schoolFish;
+
+        AIFishSwim(RidableEntity ridable) {
+            super((EntityFish) ridable, 1.0D, 40);
+            this.ridable = ridable;
+            this.schoolFish = ridable instanceof RidableFishSchool ? (RidableFishSchool) ridable : null;
+        }
+
+        // shouldExecute
+        @Override
+        public boolean a() {
+            return ridable.getRider() == null && (schoolFish == null || schoolFish.isNotFollowing()) && super.a();
+        }
+
+        // shouldContinueExecuting
+        @Override
+        public boolean b() {
+            return ridable.getRider() == null && super.b();
         }
     }
 }

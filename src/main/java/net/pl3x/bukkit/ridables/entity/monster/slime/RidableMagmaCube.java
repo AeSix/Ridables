@@ -1,21 +1,20 @@
 package net.pl3x.bukkit.ridables.entity.monster.slime;
 
-import net.minecraft.server.v1_13_R2.ControllerMove;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityIronGolem;
-import net.minecraft.server.v1_13_R2.EntityMagmaCube;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.ControllerMove;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityIronGolem;
+import net.minecraft.server.v1_14_R1.EntityMagmaCube;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.GenericAttributes;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.mob.MagmaCubeConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASD;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIFindNearestEntity;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIFindNearestPlayer;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASD;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.entity.ai.goal.magma_cube.AIMagmaCubeAttack;
 import net.pl3x.bukkit.ridables.entity.ai.goal.magma_cube.AIMagmaCubeFaceRandom;
 import net.pl3x.bukkit.ridables.entity.ai.goal.magma_cube.AIMagmaCubeHop;
@@ -31,8 +30,8 @@ public class RidableMagmaCube extends EntityMagmaCube implements RidableEntity {
     private int prevSpacebarCharge = 0;
     private float fallDistanceCharge = 0;
 
-    public RidableMagmaCube(World world) {
-        super(world);
+    public RidableMagmaCube(EntityTypes<? extends EntityMagmaCube> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new MagmaCubeWASDController(this);
         lookController = new LookController(this);
     }
@@ -75,7 +74,7 @@ public class RidableMagmaCube extends EntityMagmaCube implements RidableEntity {
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
+    public boolean be() {
         return CONFIG.RIDING_RIDE_IN_WATER;
     }
 
@@ -100,8 +99,8 @@ public class RidableMagmaCube extends EntityMagmaCube implements RidableEntity {
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 
@@ -148,7 +147,7 @@ public class RidableMagmaCube extends EntityMagmaCube implements RidableEntity {
 
     @Override
     public boolean onSpacebar() {
-        if (getRider().getBukkitEntity().hasPermission("allow.special.magma_cube")) {
+        if (getRider().getBukkitEntity().hasPermission("ridables.special.magma_cube")) {
             spacebarCharge++;
             if (spacebarCharge > 50) {
                 spacebarCharge -= 2;

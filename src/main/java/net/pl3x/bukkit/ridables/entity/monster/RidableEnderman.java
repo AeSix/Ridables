@@ -1,54 +1,63 @@
 package net.pl3x.bukkit.ridables.entity.monster;
 
-import com.destroystokyo.paper.event.entity.EndermanAttackPlayerEvent;
-import net.minecraft.server.v1_13_R2.Block;
-import net.minecraft.server.v1_13_R2.BlockPosition;
-import net.minecraft.server.v1_13_R2.Blocks;
-import net.minecraft.server.v1_13_R2.DamageSource;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityEnderman;
-import net.minecraft.server.v1_13_R2.EntityEndermite;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.FluidCollisionOption;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.IBlockData;
-import net.minecraft.server.v1_13_R2.MathHelper;
-import net.minecraft.server.v1_13_R2.MovingObjectPosition;
-import net.minecraft.server.v1_13_R2.TagsBlock;
-import net.minecraft.server.v1_13_R2.Vec3D;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.Block;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.Blocks;
+import net.minecraft.server.v1_14_R1.DamageSource;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityEnderman;
+import net.minecraft.server.v1_14_R1.EntityEndermite;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityLiving;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.IBlockData;
+import net.minecraft.server.v1_14_R1.MathHelper;
+import net.minecraft.server.v1_14_R1.MovingObjectPosition;
+import net.minecraft.server.v1_14_R1.MovingObjectPositionBlock;
+import net.minecraft.server.v1_14_R1.PathfinderGoal;
+import net.minecraft.server.v1_14_R1.PathfinderGoalFloat;
+import net.minecraft.server.v1_14_R1.PathfinderGoalHurtByTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalLookAtPlayer;
+import net.minecraft.server.v1_14_R1.PathfinderGoalMeleeAttack;
+import net.minecraft.server.v1_14_R1.PathfinderGoalNearestAttackableTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomLookaround;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomStrollLand;
+import net.minecraft.server.v1_14_R1.PathfinderTargetCondition;
+import net.minecraft.server.v1_14_R1.RayTrace;
+import net.minecraft.server.v1_14_R1.TagsBlock;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
+import net.pl3x.bukkit.ridables.Ridables;
 import net.pl3x.bukkit.ridables.configuration.mob.EndermanConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASD;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAttackMelee;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAttackNearest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIHurtByTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AILookIdle;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AISwim;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWanderAvoidWater;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWatchClosest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.enderman.AIEndermanFindPlayer;
-import net.pl3x.bukkit.ridables.entity.ai.goal.enderman.AIEndermanPlaceBlock;
-import net.pl3x.bukkit.ridables.entity.ai.goal.enderman.AIEndermanTakeBlock;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASD;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
+import net.pl3x.bukkit.ridables.util.PaperOnly;
+import org.bukkit.Bukkit;
 import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.v1_13_R2.event.CraftEventFactory;
+import org.bukkit.craftbukkit.v1_14_R1.event.CraftEventFactory;
 import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Player;
 
+import java.util.EnumSet;
+
 public class RidableEnderman extends EntityEnderman implements RidableEntity {
-    public static final EndermanConfig CONFIG = new EndermanConfig();
+    private static EndermanConfig config;
 
     private boolean skipTP;
 
-    public RidableEnderman(World world) {
-        super(world);
+    public RidableEnderman(EntityTypes<? extends EntityEnderman> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new ControllerWASD(this);
         lookController = new LookController(this);
+
+        if (config == null) {
+            config = getConfig();
+        }
     }
 
     @Override
@@ -56,59 +65,129 @@ public class RidableEnderman extends EntityEnderman implements RidableEntity {
         return RidableType.ENDERMAN;
     }
 
-    // canDespawn
     @Override
-    public boolean isTypeNotPersistent() {
-        return !hasCustomName() && !isLeashed();
+    public EndermanConfig getConfig() {
+        return (EndermanConfig) getType().getConfig();
     }
 
     @Override
-    protected void initAttributes() {
-        super.initAttributes();
-        getAttributeMap().b(RidableType.RIDING_SPEED); // registerAttribute
-        reloadAttributes();
+    public double getRidingSpeed() {
+        return config.RIDING_SPEED;
     }
 
     @Override
-    public void reloadAttributes() {
-        getAttributeInstance(RidableType.RIDING_SPEED).setValue(CONFIG.RIDING_SPEED);
-        getAttributeInstance(GenericAttributes.maxHealth).setValue(CONFIG.MAX_HEALTH);
-        getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(CONFIG.BASE_SPEED);
-        getAttributeInstance(GenericAttributes.ATTACK_DAMAGE).setValue(CONFIG.AI_MELEE_DAMAGE);
-        getAttributeInstance(GenericAttributes.FOLLOW_RANGE).setValue(CONFIG.AI_FOLLOW_RANGE);
-    }
+    protected void initPathfinder() {
+        goalSelector.a(0, new PathfinderGoalFloat(this));
+        PathfinderGoal someNewGoal = new PathfinderGoal() {
+            public boolean a() { // shouldExecute
+                EntityLiving target = getGoalTarget();
+                return getRider() == null && target instanceof EntityHuman && target.h(RidableEnderman.this) <= 256.0D && shouldAttack((EntityHuman) target);
+            }
 
-    // initAI - override vanilla AI
-    @Override
-    protected void n() {
-        goalSelector.a(0, new AISwim(this));
-        goalSelector.a(2, new AIAttackMelee(this, 1.0D, false));
-        goalSelector.a(7, new AIWanderAvoidWater(this, 1.0D, 0.0F));
-        goalSelector.a(8, new AIWatchClosest(this, EntityHuman.class, 8.0F));
-        goalSelector.a(8, new AILookIdle(this));
-        goalSelector.a(10, new AIEndermanPlaceBlock(this));
-        goalSelector.a(11, new AIEndermanTakeBlock(this));
-        targetSelector.a(1, new AIEndermanFindPlayer(this));
-        targetSelector.a(2, new AIHurtByTarget(this, false));
-        targetSelector.a(3, new AIAttackNearest<>(this, EntityEndermite.class, 10, true, false, EntityEndermite::isPlayerSpawned));
+            public void c() { // startExecuting
+                getNavigation().o();
+            }
+        };
+        someNewGoal.a(EnumSet.of(PathfinderGoal.Type.JUMP, PathfinderGoal.Type.MOVE));
+        goalSelector.a(1, someNewGoal);
+        goalSelector.a(2, new PathfinderGoalMeleeAttack(this, 1.0D, false) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(7, new PathfinderGoalRandomStrollLand(this, 1.0D, 0.0F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(8, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 8.0F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(8, new PathfinderGoalRandomLookaround(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(10, new PathfinderGoal() { // PathfinderGoalEndermanPlaceBlock
+            public boolean a() { // shouldExecute
+                return getCarried() != null && world.getGameRules().getBoolean("mobGriefing") && random.nextInt(2000) == 0 && getRider() == null;
+            }
+
+            public void e() { // tick
+                int x = MathHelper.floor(locX - 1.0D + random.nextDouble() * 2.0D);
+                int y = MathHelper.floor(locY + random.nextDouble() * 2.0D);
+                int z = MathHelper.floor(locZ - 1.0D + random.nextDouble() * 2.0D);
+                tryPlaceBlock(x, y, z);
+            }
+        });
+        goalSelector.a(11, new PathfinderGoal() { // PathfinderGoalEndermanPickupBlock
+            public boolean a() { // shouldExecute
+                return getCarried() == null && world.getGameRules().getBoolean("mobGriefing") && getRandom().nextInt(20) == 0 && getRider() == null;
+            }
+
+            public void e() { // tick
+                int x = MathHelper.floor(locX - 2.0D + random.nextDouble() * 4.0D);
+                int y = MathHelper.floor(locY + random.nextDouble() * 3.0D);
+                int z = MathHelper.floor(locZ - 2.0D + random.nextDouble() * 4.0D);
+                tryTakeBlock(x, y, z);
+            }
+        });
+        targetSelector.a(1, new AIEndermanTargetPlayerWhoLooked(this));
+        targetSelector.a(2, new PathfinderGoalHurtByTarget(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        targetSelector.a(3, new PathfinderGoalNearestAttackableTarget<EntityEndermite>(this, EntityEndermite.class, 10, true, false,
+                (target) -> target instanceof EntityEndermite && ((EntityEndermite) target).isPlayerSpawned()) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
     }
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
-        return CONFIG.RIDING_RIDE_IN_WATER && !CONFIG.RIDING_EJECT_WHEN_WET;
+    public boolean be() {
+        return config.RIDING_RIDE_IN_WATER && !config.RIDING_EJECT_WHEN_WET;
     }
 
     // getJumpUpwardsMotion
     @Override
-    protected float cG() {
-        return getRider() == null ? CONFIG.AI_JUMP_POWER : CONFIG.RIDING_JUMP_POWER;
+    protected float cW() {
+        return getRider() == null ? super.cW() : config.RIDING_JUMP_POWER;
     }
 
     // randomlyTeleport
     @Override
-    public boolean dz() {
-        return skipTP || super.dz();
+    public boolean dW() {
+        return skipTP || super.dW();
     }
 
     public boolean teleportToEntity(Entity entity) {
@@ -118,19 +197,17 @@ public class RidableEnderman extends EntityEnderman implements RidableEntity {
     @Override
     protected void mobTick() {
         boolean hasRider = getRider() != null;
-        Q = hasRider ? CONFIG.RIDING_STEP_HEIGHT : CONFIG.AI_STEP_HEIGHT;
-        if (ap()) { // isWet
-            if (CONFIG.RIDING_EJECT_WHEN_WET && getRider() != null) {
+        K = hasRider ? config.RIDING_STEP_HEIGHT : 1.0F;
+        if (at()) { // isWet
+            if (config.RIDING_EJECT_WHEN_WET && getRider() != null) {
                 ejectPassengers();
             }
             if (hasRider) {
-                if (CONFIG.RIDING_DAMAGE_WHEN_WET > 0F) {
-                    damageEntity(DamageSource.DROWN, CONFIG.RIDING_DAMAGE_WHEN_WET);
+                if (config.RIDING_DAMAGE_WHEN_WET > 0F) {
+                    damageEntity(DamageSource.DROWN, config.RIDING_DAMAGE_WHEN_WET);
                 }
             } else {
-                if (CONFIG.AI_DAMAGE_WHEN_WET > 0F) {
-                    damageEntity(DamageSource.DROWN, CONFIG.AI_DAMAGE_WHEN_WET);
-                }
+                damageEntity(DamageSource.DROWN, 1.0F);
             }
         }
         super.mobTick();
@@ -138,8 +215,8 @@ public class RidableEnderman extends EntityEnderman implements RidableEntity {
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 
@@ -150,19 +227,21 @@ public class RidableEnderman extends EntityEnderman implements RidableEntity {
             return true; // handled by vanilla action
         }
         if (hand == EnumHand.MAIN_HAND && !entityhuman.isSneaking() && passengers.isEmpty() && !entityhuman.isPassenger()) {
-            return tryRide(entityhuman, CONFIG.RIDING_SADDLE_REQUIRE, CONFIG.RIDING_SADDLE_CONSUME);
+            return tryRide(entityhuman, config.RIDING_SADDLE_REQUIRE, config.RIDING_SADDLE_CONSUME);
         }
         return false;
     }
 
     @Override
-    public boolean removePassenger(Entity passenger, boolean notCancellable) {
+    public boolean removePassenger(Entity passenger) {
         if (passenger instanceof EntityPlayer && !passengers.isEmpty() && passenger == passengers.get(0)) {
-            if (!new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), notCancellable).callEvent() && !notCancellable) {
+            RidableDismountEvent event = new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), false);
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancellable()) {
                 return false; // cancelled
             }
         }
-        return super.removePassenger(passenger, notCancellable);
+        return super.removePassenger(passenger);
     }
 
     @Override
@@ -172,7 +251,7 @@ public class RidableEnderman extends EntityEnderman implements RidableEntity {
         }
 
         EntityPlayer rider = getRider();
-        if (rider == null || !rider.getBukkitEntity().hasPermission("allow.special.enderman")) {
+        if (rider == null || !rider.getBukkitEntity().hasPermission("ridables.special.enderman")) {
             return false;
         }
 
@@ -190,21 +269,22 @@ public class RidableEnderman extends EntityEnderman implements RidableEntity {
         if (!state.getBlock().a(TagsBlock.ENDERMAN_HOLDABLE)) {
             return false; // not a holdable block
         }
-        MovingObjectPosition rayTrace = world.rayTrace(
-                new Vec3D(MathHelper.floor(locX) + 0.5F, y + 0.5F, MathHelper.floor(locZ) + 0.5F),
-                new Vec3D(x + 0.5F, y + 0.5F, z + 0.5F),
-                FluidCollisionOption.NEVER, true, false);
-        if (rayTrace == null) {
-            return false; // no target block in range (shouldn't happen?)
+        MovingObjectPositionBlock rayTrace = world.rayTrace(new RayTrace(
+                new Vec3D((double) MathHelper.floor(locX) + 0.5D, (double) y + 0.5D, (double) MathHelper.floor(locZ) + 0.5D),
+                new Vec3D((double) x + 0.5D, (double) y + 0.5D, (double) z + 0.5D),
+                RayTrace.BlockCollisionOption.COLLIDER, RayTrace.FluidCollisionOption.NONE, this));
+        if (rayTrace.getType() == MovingObjectPosition.EnumMovingObjectType.MISS) {
+            return false; // no target block in range
         }
-        if (rayTrace.getBlockPosition().equals(pos)) {
+        if (!rayTrace.getBlockPosition().equals(pos)) {
             return false; // block in the way
         }
         if (CraftEventFactory.callEntityChangeBlockEvent(this, pos, Blocks.AIR.getBlockData()).isCancelled()) {
             return false; // plugin cancelled
         }
-        world.setAir(pos);
-        setCarried(Block.b(state, world, pos));
+        //setCarried(state); // original
+        world.a(pos, false); // setAir
+        setCarried(Block.b(state, world, pos)); // getValidBlockForPosition (fixes MC-124320)
         return true;
     }
 
@@ -217,11 +297,13 @@ public class RidableEnderman extends EntityEnderman implements RidableEntity {
         if (!world.getType(pos).isAir()) {
             return false; // cannot place in non-air block
         }
-        IBlockData stateDown = world.getType(pos.down());
-        if (stateDown.isAir() || !stateDown.g()) {
+        BlockPosition posDown = pos.down();
+        IBlockData stateDown = world.getType(posDown);
+        if (stateDown.isAir() || !Block.a(stateDown.getCollisionShape(world, posDown))) {
             return false; // cannot place on air or non-full cube
         }
-        IBlockData newState = Block.b(carried, world, pos); // getValidBlockForPosition
+        //IBlockData newState = carried; // original
+        IBlockData newState = Block.b(carried, world, pos); // getValidBlockForPosition (fixes MC-124320)
         if (newState == null) {
             return false; // no valid blockstate for position
         }
@@ -238,7 +320,7 @@ public class RidableEnderman extends EntityEnderman implements RidableEntity {
 
     @Override
     public boolean damageEntity(DamageSource damagesource, float f) {
-        skipTP = getRider() == null ? !CONFIG.AI_TELEPORT_WHEN_DAMAGED : !CONFIG.RIDING_TELEPORT_WHEN_DAMAGED;
+        skipTP = getRider() != null && !config.RIDING_TELEPORT_WHEN_DAMAGED;
         boolean result = super.damageEntity(damagesource, f);
         skipTP = false;
         return result;
@@ -246,9 +328,10 @@ public class RidableEnderman extends EntityEnderman implements RidableEntity {
 
     public boolean shouldAttack(EntityHuman player) {
         boolean shouldAttack = shouldAttack_real(player);
-        EndermanAttackPlayerEvent event = new EndermanAttackPlayerEvent((Enderman) getBukkitEntity(), (Player) player.getBukkitEntity());
-        event.setCancelled(!shouldAttack);
-        return event.callEvent();
+        if (Ridables.isPaper()) {
+            return PaperOnly.callEndermanAttackPlayerEvent((Enderman) getBukkitEntity(), (Player) player.getBukkitEntity(), shouldAttack);
+        }
+        return shouldAttack;
     }
 
     private boolean shouldAttack_real(EntityHuman player) {
@@ -256,6 +339,85 @@ public class RidableEnderman extends EntityEnderman implements RidableEntity {
             return false;
         }
         Vec3D direction = new Vec3D(locX - player.locX, getBoundingBox().minY + getHeadHeight() - (player.locY + player.getHeadHeight()), locZ - player.locZ);
-        return player.f(1.0F).a().b(direction.a()) > 1.0D - 0.025D / direction.b() && player.hasLineOfSight(this); // getLook normalize dotProduct normalize length
+        return player.f(1.0F).d().b(direction.d()) > 1.0D - 0.025D / direction.f() && player.hasLineOfSight(this); // getLook normalize dotProduct normalize length
+    }
+
+    class AIEndermanTargetPlayerWhoLooked extends PathfinderGoalNearestAttackableTarget<EntityHuman> {
+        private final RidableEnderman enderman;
+        private EntityHuman target;
+        private int aggroTime;
+        private int teleportTime;
+        private final PathfinderTargetCondition targetCondition;
+        private final PathfinderTargetCondition ignoreSensesCondition = (new PathfinderTargetCondition()).c();
+
+        AIEndermanTargetPlayerWhoLooked(RidableEnderman enderman) {
+            super(enderman, EntityHuman.class, false);
+            this.enderman = enderman;
+            this.targetCondition = (new PathfinderTargetCondition()).a(k()).a((target) -> enderman.shouldAttack((EntityHuman) target));
+        }
+
+        // shouldExecute
+        @Override
+        public boolean a() {
+            return getRider() == null && (target = enderman.world.a(targetCondition, enderman)) != null;
+        }
+
+        // shouldContinueExecuting
+        @Override
+        public boolean b() {
+            if (getRider() != null) {
+                return false;
+            }
+            if (target != null) {
+                if (!enderman.shouldAttack(target)) {
+                    return false;
+                } else {
+                    enderman.a(target, 10.0F, 10.0F);
+                    return true;
+                }
+            }
+            if (c != null && ignoreSensesCondition.a(enderman, c)) {
+                return true;
+            }
+            return super.b();
+        }
+
+        // startExecuting
+        @Override
+        public void c() {
+            aggroTime = 5;
+            teleportTime = 0;
+        }
+
+        // resetTask
+        @Override
+        public void d() {
+            target = null;
+            super.d();
+        }
+
+        // tick
+        @Override
+        public void e() {
+            if (target != null) {
+                if (--aggroTime <= 0) {
+                    c = target;
+                    target = null;
+                    super.c();
+                }
+            } else {
+                if (c != null && !enderman.isPassenger()) {
+                    if (enderman.shouldAttack((EntityHuman) c)) {
+                        if (c.h(enderman) < 16.0D) {
+                            enderman.dW();
+                        }
+                        teleportTime = 0;
+                    } else if (c.h(enderman) > 256.0D && teleportTime++ >= 30 && enderman.a(c)) {
+                        teleportTime = 0;
+                    }
+                }
+                super.e();
+            }
+        }
     }
 }

@@ -1,18 +1,17 @@
 package net.pl3x.bukkit.ridables.listener;
 
-import net.minecraft.server.v1_13_R2.EnumHand;
+import net.minecraft.server.v1_14_R1.EnumHand;
 import net.pl3x.bukkit.ridables.configuration.Config;
 import net.pl3x.bukkit.ridables.configuration.Lang;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
 import net.pl3x.bukkit.ridables.entity.boss.RidableEnderDragon;
-import net.pl3x.bukkit.ridables.entity.boss.RidableWither;
 import net.pl3x.bukkit.ridables.entity.monster.RidableBlaze;
 import net.pl3x.bukkit.ridables.entity.monster.RidableCreeper;
 import net.pl3x.bukkit.ridables.entity.monster.RidableGhast;
 import net.pl3x.bukkit.ridables.entity.projectile.CustomFireball;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
 import org.bukkit.entity.ComplexEntityPart;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -35,7 +34,7 @@ public class RidableListener implements Listener {
         }
 
         Entity dragon = event.getRightClicked();
-        if (dragon.isDead() || !dragon.isValid() || dragon.getType() != EntityType.COMPLEX_PART) {
+        if (dragon.isDead() || !dragon.isValid() || !(dragon instanceof ComplexEntityPart)) {
             return; // not a valid dragon entity
         }
 
@@ -52,48 +51,33 @@ public class RidableListener implements Listener {
     }
 
     @EventHandler
-    public void onFireballExplosionDamageEntity(EntityDamageByEntityEvent event) {
-        if (event.getDamager().getType() != EntityType.FIREBALL) {
-            return; // not a fireball
-        }
-
-        net.minecraft.server.v1_13_R2.Entity nmsEntity = ((CraftEntity) event.getDamager()).getHandle();
-        if (!(nmsEntity instanceof CustomFireball)) {
-            return; // not our custom fireball
-        }
-
-        CustomFireball fireball = (CustomFireball) nmsEntity;
-        if (fireball.getRidable() instanceof RidableGhast) {
-            if (fireball.getRider() == null) {
-                event.setDamage(EntityDamageEvent.DamageModifier.BASE, RidableGhast.CONFIG.AI_FIREBALL_EXPLOSION_DAMAGE);
-            } else {
-                event.setDamage(EntityDamageEvent.DamageModifier.BASE, RidableGhast.CONFIG.RIDING_FIREBALL_EXPLOSION_DAMAGE);
+    public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
+        if (event.getDamager().getType() == EntityType.FIREBALL) {
+            net.minecraft.server.v1_14_R1.Entity nmsEntity = ((CraftEntity) event.getDamager()).getHandle();
+            if (!(nmsEntity instanceof CustomFireball)) {
+                return; // not our custom fireball
             }
-        } else if (fireball.getRidable() instanceof RidableBlaze) {
-            if (fireball.getRider() == null) {
-                event.setDamage(EntityDamageEvent.DamageModifier.BASE, RidableBlaze.CONFIG.AI_SHOOT_EXPLOSION_DAMAGE);
-            } else {
-                event.setDamage(EntityDamageEvent.DamageModifier.BASE, RidableBlaze.CONFIG.RIDING_SHOOT_EXPLOSION_DAMAGE);
-            }
-        }
-    }
 
-    @EventHandler
-    public void onRidableDamageEntity(EntityDamageByEntityEvent event) {
-        RidableEntity ridable = RidableType.getRidable(event.getDamager());
-        if (ridable == null) {
-            return; // not caused by a ridable
-        }
-
-        if (ridable.getType() == RidableType.CREEPER) {
-            if (ridable.getRider() == null) {
-                event.setDamage(EntityDamageEvent.DamageModifier.BASE, RidableCreeper.CONFIG.AI_EXPLOSION_DAMAGE);
-            } else {
-                event.setDamage(EntityDamageEvent.DamageModifier.BASE, RidableCreeper.CONFIG.RIDING_EXPLOSION_DAMAGE);
+            CustomFireball fireball = (CustomFireball) nmsEntity;
+            if (fireball.getRidable() instanceof RidableGhast) {
+                if (fireball.getRider() != null) {
+                    event.setDamage(EntityDamageEvent.DamageModifier.BASE, ((RidableGhast) fireball.getRidable()).getConfig().RIDING_FIREBALL_EXPLOSION_DAMAGE);
+                }
+            } else if (fireball.getRidable() instanceof RidableBlaze) {
+                if (fireball.getRider() != null) {
+                    event.setDamage(EntityDamageEvent.DamageModifier.BASE, ((RidableBlaze) fireball.getRidable()).getConfig().RIDING_SHOOT_EXPLOSION_DAMAGE);
+                }
             }
-        } else if (ridable.getType() == RidableType.WITHER) {
-            if (((RidableWither) ridable).getInvulTime() > 0) {
-                event.setDamage(EntityDamageEvent.DamageModifier.BASE, RidableWither.CONFIG.AI_SPAWN_EXPLOSION_DAMAGE);
+        } else {
+            RidableEntity ridable = RidableType.getRidable(event.getDamager());
+            if (ridable == null) {
+                return; // not caused by a ridable
+            }
+
+            if (ridable.getType() == RidableType.CREEPER) {
+                if (ridable.getRider() != null) {
+                    event.setDamage(EntityDamageEvent.DamageModifier.BASE, ((RidableCreeper) ridable).getConfig().RIDING_EXPLOSION_DAMAGE);
+                }
             }
         }
     }
@@ -108,13 +92,12 @@ public class RidableListener implements Listener {
             return; // not riding a ridable
         }
 
-        String command = event.getMessage()
-                .split(" ")[0]    // ignore command arguments
-                .substring(1)     // ignore beginning slash
-                .toLowerCase();   // ignore casing
-        boolean matchCommand = Config.COMMANDS_LIST.contains(command);
-
-        if (Config.COMMANDS_LIST_IS_WHITELIST != matchCommand) {
+        if (Config.COMMANDS_LIST_IS_WHITELIST != Config.COMMANDS_LIST.contains(
+                event.getMessage()
+                        .split(" ")[0]    // ignore command arguments
+                        .substring(1)     // ignore beginning slash
+                        .toLowerCase())   // ignore casing
+        ) {
             Lang.send(event.getPlayer(), Lang.DISABLED_COMMAND_WHILE_RIDING);
             event.setCancelled(true);
         }

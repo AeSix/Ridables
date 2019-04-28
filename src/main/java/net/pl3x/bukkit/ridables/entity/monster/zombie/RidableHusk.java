@@ -1,46 +1,62 @@
 package net.pl3x.bukkit.ridables.entity.monster.zombie;
 
-import net.minecraft.server.v1_13_R2.Blocks;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityIronGolem;
-import net.minecraft.server.v1_13_R2.EntityPigZombie;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EntityTurtle;
-import net.minecraft.server.v1_13_R2.EntityVillager;
-import net.minecraft.server.v1_13_R2.EntityZombieHusk;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.Navigation;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.Blocks;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityIronGolem;
+import net.minecraft.server.v1_14_R1.EntityPigZombie;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTurtle;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EntityVillagerAbstract;
+import net.minecraft.server.v1_14_R1.EntityZombieHusk;
+import net.minecraft.server.v1_14_R1.EnumDifficulty;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.GeneratorAccess;
+import net.minecraft.server.v1_14_R1.PathfinderGoalBreakDoor;
+import net.minecraft.server.v1_14_R1.PathfinderGoalHurtByTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalLookAtPlayer;
+import net.minecraft.server.v1_14_R1.PathfinderGoalMoveThroughVillage;
+import net.minecraft.server.v1_14_R1.PathfinderGoalNearestAttackableTarget;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomLookaround;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomStrollLand;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRemoveBlock;
+import net.minecraft.server.v1_14_R1.PathfinderGoalZombieAttack;
+import net.minecraft.server.v1_14_R1.SoundCategory;
+import net.minecraft.server.v1_14_R1.SoundEffects;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.mob.HuskConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.controller.ControllerWASD;
-import net.pl3x.bukkit.ridables.entity.ai.controller.LookController;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIAttackNearest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIHurtByTarget;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AILookIdle;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIMoveThroughVillage;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIMoveTowardsRestriction;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWanderAvoidWater;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWatchClosest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.zombie.AIZombieAttack;
-import net.pl3x.bukkit.ridables.entity.ai.goal.zombie.AIZombieAttackTurtleEgg;
-import net.pl3x.bukkit.ridables.entity.ai.goal.zombie.AIZombieBreakDoor;
+import net.pl3x.bukkit.ridables.entity.controller.ControllerWASD;
+import net.pl3x.bukkit.ridables.entity.controller.LookController;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 public class RidableHusk extends EntityZombieHusk implements RidableEntity {
-    public static final HuskConfig CONFIG = new HuskConfig();
+    private static HuskConfig config;
 
-    private final AIZombieBreakDoor breakDoorAI;
-
-    public RidableHusk(World world) {
-        super(world);
+    public RidableHusk(EntityTypes<? extends EntityZombieHusk> entitytypes, World world) {
+        super(entitytypes, world);
         moveController = new ControllerWASD(this);
         lookController = new LookController(this);
-        breakDoorAI = new AIZombieBreakDoor(this);
+
+        if (config == null) {
+            config = getConfig();
+        }
+
+        RidableZombie.setBreakDoorsGoal(this, new PathfinderGoalBreakDoor(this, difficulty -> difficulty == EnumDifficulty.HARD) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
     }
 
     @Override
@@ -48,93 +64,162 @@ public class RidableHusk extends EntityZombieHusk implements RidableEntity {
         return RidableType.HUSK;
     }
 
-    // canDespawn
     @Override
-    public boolean isTypeNotPersistent() {
-        return !hasCustomName() && !isLeashed();
+    public HuskConfig getConfig() {
+        return (HuskConfig) getType().getConfig();
     }
 
     @Override
-    protected void initAttributes() {
-        super.initAttributes();
-        getAttributeMap().b(RidableType.RIDING_SPEED); // registerAttribute
-        reloadAttributes();
+    public double getRidingSpeed() {
+        return config.RIDING_SPEED;
     }
 
     @Override
-    public void reloadAttributes() {
-        getAttributeInstance(RidableType.RIDING_SPEED).setValue(CONFIG.RIDING_SPEED);
-        getAttributeInstance(GenericAttributes.maxHealth).setValue(CONFIG.MAX_HEALTH);
-        getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(CONFIG.BASE_SPEED);
-        getAttributeInstance(GenericAttributes.ATTACK_DAMAGE).setValue(CONFIG.AI_MELEE_DAMAGE);
-        getAttributeInstance(GenericAttributes.FOLLOW_RANGE).setValue(CONFIG.AI_FOLLOW_RANGE);
-        getAttributeInstance(GenericAttributes.h).setValue(CONFIG.AI_ARMOR); // ARMOR
-        getAttributeInstance(c).setValue(random.nextDouble() * CONFIG.AI_SPAWN_REINFORCEMENTS_CHANCE); // SPAWN_REINFORCEMENTS_CHANCE
-    }
-
-    // initAI - override vanilla AI
-    @Override
-    protected void n() {
+    protected void initPathfinder() {
         // from EntityZombie
-        goalSelector.a(4, new AIZombieAttackTurtleEgg(Blocks.TURTLE_EGG, this, 1.0D, 3));
-        goalSelector.a(5, new AIMoveTowardsRestriction(this, 1.0D));
-        goalSelector.a(8, new AIWatchClosest(this, EntityHuman.class, 8.0F));
-        goalSelector.a(8, new AILookIdle(this));
+        goalSelector.a(4, new PathfinderGoalRemoveBlock(Blocks.TURTLE_EGG, this, 1.0D, 3) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
 
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+
+            public void a(GeneratorAccess world, BlockPosition pos) { // playBreakingSound
+                world.a(null, pos, SoundEffects.ENTITY_ZOMBIE_DESTROY_EGG, SoundCategory.HOSTILE, 0.5F, 0.9F + getRandom().nextFloat() * 0.2F);
+            }
+
+            public void a(World world, BlockPosition pos) { // playBrokenSound
+                world.a(null, pos, SoundEffects.ENTITY_TURTLE_EGG_BREAK, SoundCategory.BLOCKS, 0.7F, 0.9F + world.random.nextFloat() * 0.2F);
+            }
+
+            public double h() { // getTargetDistanceSq
+                return 1.14D;
+            }
+        });
+        goalSelector.a(8, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 8.0F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(8, new PathfinderGoalRandomLookaround(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        l();
+    }
+
+    @Override
+    protected void l() {
         // also from EntityZombie
-        goalSelector.a(2, new AIZombieAttack(this, 1.0D, false));
-        goalSelector.a(6, new AIMoveThroughVillage(this, 1.0D, false));
-        goalSelector.a(7, new AIWanderAvoidWater(this, 1.0D));
-        targetSelector.a(1, new AIHurtByTarget(this, true, EntityPigZombie.class));
-        targetSelector.a(2, new AIAttackNearest<>(this, EntityHuman.class, true));
+        goalSelector.a(2, new PathfinderGoalZombieAttack(this, 1.0D, false) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(6, new PathfinderGoalMoveThroughVillage(this, 1.0D, true, 4, this::ef) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(7, new PathfinderGoalRandomStrollLand(this, 1.0D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        targetSelector.a(1, new PathfinderGoalHurtByTarget(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        }.a(EntityPigZombie.class));
+        targetSelector.a(2, new PathfinderGoalNearestAttackableTarget<EntityHuman>(this, EntityHuman.class, true) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
         if (world.spigotConfig.zombieAggressiveTowardsVillager) {
-            targetSelector.a(3, new AIAttackNearest<>(this, EntityVillager.class, false));
+            targetSelector.a(3, new PathfinderGoalNearestAttackableTarget<EntityVillagerAbstract>(this, EntityVillagerAbstract.class, false) {
+                public boolean a() { // shouldExecute
+                    return getRider() == null && super.a();
+                }
+
+                public boolean b() { // shouldContinueExecuting
+                    return getRider() == null && super.b();
+                }
+            });
         }
-        targetSelector.a(3, new AIAttackNearest<>(this, EntityIronGolem.class, true));
-        targetSelector.a(5, new AIAttackNearest<>(this, EntityTurtle.class, 10, true, false, EntityTurtle.bC));
+        targetSelector.a(3, new PathfinderGoalNearestAttackableTarget<EntityIronGolem>(this, EntityIronGolem.class, true) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        targetSelector.a(5, new PathfinderGoalNearestAttackableTarget<EntityTurtle>(this, EntityTurtle.class, 10, true, false, EntityTurtle.bz) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
     }
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
-        return CONFIG.RIDING_RIDE_IN_WATER;
+    public boolean be() {
+        return config.RIDING_RIDE_IN_WATER;
     }
 
     // getJumpUpwardsMotion
     @Override
-    protected float cG() {
-        return getRider() == null ? CONFIG.AI_JUMP_POWER : CONFIG.RIDING_JUMP_POWER;
-    }
-
-    // setBreakDoorsAITask
-    @Override
-    public void t(boolean enabled) {
-        if (dz()) { // canBreakDoors
-            if (dH() != enabled) {
-                RidableZombie.setBreakDoorsTask(this, enabled);
-                ((Navigation) this.getNavigation()).a(enabled); // setBreakDoors
-                if (enabled) {
-                    goalSelector.a(1, breakDoorAI); // addTask
-                } else {
-                    goalSelector.a(breakDoorAI); // removeTask
-                }
-            }
-        } else if (dH()) {
-            goalSelector.a(breakDoorAI); // removeTask
-            RidableZombie.setBreakDoorsTask(this, false);
-        }
+    protected float cW() {
+        return getRider() == null ? super.cW() : config.RIDING_JUMP_POWER;
     }
 
     @Override
     protected void mobTick() {
-        Q = getRider() == null ? CONFIG.AI_STEP_HEIGHT : CONFIG.RIDING_STEP_HEIGHT;
+        K = getRider() == null ? 0.6F : config.RIDING_STEP_HEIGHT;
         super.mobTick();
     }
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         checkMove();
     }
 
@@ -145,21 +230,23 @@ public class RidableHusk extends EntityZombieHusk implements RidableEntity {
             return true; // handled by vanilla action
         }
         if (hand == EnumHand.MAIN_HAND && !entityhuman.isSneaking() && passengers.isEmpty() && !entityhuman.isPassenger()) {
-            if (!CONFIG.RIDING_BABIES && isBaby()) {
+            if (!config.RIDING_BABIES && isBaby()) {
                 return false; // do not ride babies
             }
-            return tryRide(entityhuman, CONFIG.RIDING_SADDLE_REQUIRE, CONFIG.RIDING_SADDLE_CONSUME);
+            return tryRide(entityhuman, config.RIDING_SADDLE_REQUIRE, config.RIDING_SADDLE_CONSUME);
         }
         return false;
     }
 
     @Override
-    public boolean removePassenger(Entity passenger, boolean notCancellable) {
+    public boolean removePassenger(Entity passenger) {
         if (passenger instanceof EntityPlayer && !passengers.isEmpty() && passenger == passengers.get(0)) {
-            if (!new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), notCancellable).callEvent() && !notCancellable) {
+            RidableDismountEvent event = new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), false);
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancellable()) {
                 return false; // cancelled
             }
         }
-        return super.removePassenger(passenger, notCancellable);
+        return super.removePassenger(passenger);
     }
 }

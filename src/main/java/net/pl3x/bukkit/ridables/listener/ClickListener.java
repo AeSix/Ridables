@@ -1,6 +1,6 @@
 package net.pl3x.bukkit.ridables.listener;
 
-import net.minecraft.server.v1_13_R2.EnumHand;
+import net.minecraft.server.v1_14_R1.EnumHand;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
 import net.pl3x.bukkit.ridables.event.RidableClickEvent;

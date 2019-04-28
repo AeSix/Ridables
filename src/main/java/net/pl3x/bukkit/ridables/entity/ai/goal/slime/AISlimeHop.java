@@ -1,7 +1,7 @@
 package net.pl3x.bukkit.ridables.entity.ai.goal.slime;
 
 import com.destroystokyo.paper.event.entity.SlimeWanderEvent;
-import net.minecraft.server.v1_13_R2.PathfinderGoal;
+import net.minecraft.server.v1_14_R1.PathfinderGoal;
 import net.pl3x.bukkit.ridables.entity.monster.slime.RidableSlime;
 import org.bukkit.entity.Slime;
 

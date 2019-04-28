@@ -10,7 +10,8 @@ import java.util.List;
 public enum DisabledReason {
     UNSUPPORTED_SERVER_TYPE(
             "#       This server is unsupported!        #",
-            "#    Only Paper servers are supported!     #",
+            "#     Spigot is a minimum requirement!     #",
+            "#   Paper is the recommended requirement!  #",
             "#  Visit http://papermc.io/ for more info  #"
     ),
     UNSUPPORTED_SERVER_VERSION(
@@ -22,6 +23,11 @@ public enum DisabledReason {
             "#      Your server build is outdated!      #",
             "#     Please update your Paper software    #",
             "#    See downloads page for version info   #"
+    ),
+    NMS_MISMATCH(
+            "#        Incorrect server version!         #",
+            "#   Check the graph for compatibilities    #",
+            "#     See downloads page for more info     #"
     ),
     ALL_ENTITIES_DISABLED(
             "#        All entities are disabled!        #",

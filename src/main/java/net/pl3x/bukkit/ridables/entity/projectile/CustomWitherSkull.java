@@ -1,18 +1,19 @@
 package net.pl3x.bukkit.ridables.entity.projectile;
 
-import net.minecraft.server.v1_13_R2.BlockPosition;
-import net.minecraft.server.v1_13_R2.DamageSource;
-import net.minecraft.server.v1_13_R2.EntityLiving;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EntityWitherSkull;
-import net.minecraft.server.v1_13_R2.MobEffect;
-import net.minecraft.server.v1_13_R2.MobEffects;
-import net.minecraft.server.v1_13_R2.MovingObjectPosition;
-import net.minecraft.server.v1_13_R2.Particles;
-import net.minecraft.server.v1_13_R2.ProjectileHelper;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.DamageSource;
+import net.minecraft.server.v1_14_R1.EntityLiving;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EntityWitherSkull;
+import net.minecraft.server.v1_14_R1.MobEffect;
+import net.minecraft.server.v1_14_R1.MobEffects;
+import net.minecraft.server.v1_14_R1.MovingObjectPosition;
+import net.minecraft.server.v1_14_R1.Particles;
+import net.minecraft.server.v1_14_R1.ProjectileHelper;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.entity.boss.RidableWither;
-import org.bukkit.craftbukkit.v1_13_R2.event.CraftEventFactory;
+import org.bukkit.craftbukkit.v1_14_R1.event.CraftEventFactory;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Wither;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
@@ -24,8 +25,8 @@ public class CustomWitherSkull extends EntityWitherSkull implements CustomProjec
     private EntityPlayer rider;
     private int f;
 
-    public CustomWitherSkull(World world) {
-        super(world);
+    public CustomWitherSkull(EntityTypes<? extends EntityWitherSkull> entitytypes, World world) {
+        super(entitytypes, world);
     }
 
     public CustomWitherSkull(World world, RidableWither wither, EntityPlayer rider, double x, double y, double z) {

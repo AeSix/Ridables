@@ -1,38 +1,54 @@
 package net.pl3x.bukkit.ridables.entity.animal.horse;
 
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityHorseAbstract;
-import net.minecraft.server.v1_13_R2.EntityHorseSkeleton;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.EnumHand;
-import net.minecraft.server.v1_13_R2.GenericAttributes;
-import net.minecraft.server.v1_13_R2.PathfinderGoalHorseTrap;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityHorseAbstract;
+import net.minecraft.server.v1_14_R1.EntityHorseSkeleton;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.EnumHand;
+import net.minecraft.server.v1_14_R1.PathfinderGoal;
+import net.minecraft.server.v1_14_R1.PathfinderGoalBreed;
+import net.minecraft.server.v1_14_R1.PathfinderGoalFloat;
+import net.minecraft.server.v1_14_R1.PathfinderGoalFollowParent;
+import net.minecraft.server.v1_14_R1.PathfinderGoalHorseTrap;
+import net.minecraft.server.v1_14_R1.PathfinderGoalLookAtPlayer;
+import net.minecraft.server.v1_14_R1.PathfinderGoalPanic;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomLookaround;
+import net.minecraft.server.v1_14_R1.PathfinderGoalRandomStrollLand;
+import net.minecraft.server.v1_14_R1.PathfinderGoalTame;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.configuration.Lang;
 import net.pl3x.bukkit.ridables.configuration.mob.SkeletonHorseConfig;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
 import net.pl3x.bukkit.ridables.entity.RidableType;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIBreed;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIFollowParent;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AILookIdle;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIPanic;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AISwim;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWanderAvoidWater;
-import net.pl3x.bukkit.ridables.entity.ai.goal.AIWatchClosest;
-import net.pl3x.bukkit.ridables.entity.ai.goal.horse.AIHorseBucking;
 import net.pl3x.bukkit.ridables.event.RidableDismountEvent;
 import net.pl3x.bukkit.ridables.event.RidableMountEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.lang.reflect.Field;
+
 public class RidableSkeletonHorse extends EntityHorseSkeleton implements RidableEntity {
-    public static final SkeletonHorseConfig CONFIG = new SkeletonHorseConfig();
+    private static SkeletonHorseConfig config;
 
-    private final PathfinderGoalHorseTrap aiSkeletonTrap = new PathfinderGoalHorseTrap(this);
-    private boolean isTrap;
+    public RidableSkeletonHorse(EntityTypes<? extends EntityHorseSkeleton> entitytypes, World world) {
+        super(entitytypes, world);
 
-    public RidableSkeletonHorse(World world) {
-        super(world);
+        if (config == null) {
+            config = getConfig();
+        }
+
+        setTrapGoal(this, new PathfinderGoalHorseTrap(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
     }
 
     @Override
@@ -41,92 +57,123 @@ public class RidableSkeletonHorse extends EntityHorseSkeleton implements Ridable
     }
 
     @Override
-    protected void initAttributes() {
-        super.initAttributes();
-        getAttributeMap().b(RidableType.RIDING_SPEED);
-        reloadAttributes();
+    public SkeletonHorseConfig getConfig() {
+        return (SkeletonHorseConfig) getType().getConfig();
     }
 
     @Override
-    public void reloadAttributes() {
-        getAttributeInstance(RidableType.RIDING_SPEED).setValue(CONFIG.RIDING_SPEED);
-        getAttributeInstance(GenericAttributes.maxHealth).setValue(CONFIG.MAX_HEALTH);
-        getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(CONFIG.BASE_SPEED);
-        getAttributeInstance(attributeJumpStrength).setValue(CONFIG.AI_JUMP_POWER > 0.0F ? CONFIG.AI_JUMP_POWER : ed()); // getModifiedJumpStrength
-        getAttributeInstance(GenericAttributes.FOLLOW_RANGE).setValue(CONFIG.AI_FOLLOW_RANGE);
+    public double getRidingSpeed() {
+        return config.RIDING_SPEED;
     }
 
-    // initAI - override vanilla AI
     @Override
-    protected void n() {
+    protected void initPathfinder() {
         // from EntityHorseAbstract
-        goalSelector.a(1, new AIPanic(this, 1.2D));
-        goalSelector.a(1, new AIHorseBucking(this, 1.2D));
-        goalSelector.a(2, new AIBreed(this, 1.0D, EntityHorseAbstract.class));
-        goalSelector.a(4, new AIFollowParent(this, 1.0D));
-        goalSelector.a(6, new AIWanderAvoidWater(this, 0.7D));
-        goalSelector.a(7, new AIWatchClosest(this, EntityHuman.class, 6.0F));
-        goalSelector.a(8, new AILookIdle(this));
-        dI(); // initExtraAI
+        goalSelector.a(1, new PathfinderGoalPanic(this, 1.2D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(1, new PathfinderGoalTame(this, 1.2D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(2, new PathfinderGoalBreed(this, 1.0D, EntityHorseAbstract.class) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(4, new PathfinderGoalFollowParent(this, 1.0D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(6, new PathfinderGoalRandomStrollLand(this, 0.7D) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(7, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        goalSelector.a(8, new PathfinderGoalRandomLookaround(this) {
+            public boolean a() { // shouldExecute
+                return getRider() == null && super.a();
+            }
+
+            public boolean b() { // shouldContinueExecuting
+                return getRider() == null && super.b();
+            }
+        });
+        ee(); // initExtraAI
     }
 
     // initExtraAI
     @Override
-    protected void dI() {
-        goalSelector.a(0, new AISwim(this) {
-            // shouldExecute
-            public boolean a() {
-                return CONFIG.FLOATS_IN_WATER && super.a();
+    protected void ee() {
+        // add ability to swim if configured
+        goalSelector.a(0, new PathfinderGoalFloat(this) {
+            public boolean a() { // shouldExecute
+                return config.FLOATS_IN_WATER && super.a();
             }
         });
     }
 
     // canBeRiddenInWater
     @Override
-    public boolean aY() {
-        return CONFIG.RIDING_RIDE_IN_WATER;
+    public boolean be() {
+        return config.RIDING_RIDE_IN_WATER;
     }
 
     @Override
     public boolean isTamed() {
-        return true;
+        return true; // always tame
     }
 
     // getJumpUpwardsMotion
     @Override
-    protected float cG() {
-        float jump = getRider() == null ? CONFIG.AI_JUMP_POWER : CONFIG.RIDING_JUMP_POWER;
-        return jump > 0.0F ? jump : super.cG();
-    }
-
-    // isTrap
-    @Override
-    public boolean dy() {
-        return isTrap;
-    }
-
-    // setTrap
-    @Override
-    public void s(boolean flag) {
-        if (flag != isTrap) {
-            if (isTrap = flag) {
-                goalSelector.a(1, aiSkeletonTrap); // addTask
-            } else {
-                goalSelector.a(aiSkeletonTrap); // removeTask
-            }
-        }
+    protected float cW() {
+        float jump = getRider() == null ? super.cW() : config.RIDING_JUMP_POWER;
+        return jump > 0.0F ? jump : super.cW();
     }
 
     @Override
     public void mobTick() {
-        Q = getRider() == null ? CONFIG.AI_STEP_HEIGHT : CONFIG.RIDING_STEP_HEIGHT;
+        K = getRider() == null ? 1.0F : config.RIDING_STEP_HEIGHT;
         super.mobTick();
     }
 
     // travel
     @Override
-    public void a(float strafe, float vertical, float forward) {
-        super.a(strafe, vertical, forward);
+    public void e(Vec3D motion) {
+        super.e(motion);
         //checkMove(); // not needed
     }
 
@@ -136,7 +183,7 @@ public class RidableSkeletonHorse extends EntityHorseSkeleton implements Ridable
         if (super.a(entityhuman, hand)) {
             return true; // handled by vanilla action
         }
-        if (isBaby() && CONFIG.RIDING_BABIES && hand == EnumHand.MAIN_HAND && !entityhuman.isSneaking() && passengers.isEmpty() && !entityhuman.isPassenger()) {
+        if (isBaby() && config.RIDING_BABIES && hand == EnumHand.MAIN_HAND && !entityhuman.isSneaking() && passengers.isEmpty() && !entityhuman.isPassenger()) {
             g(entityhuman); // mountTo
             return true;
         }
@@ -147,23 +194,44 @@ public class RidableSkeletonHorse extends EntityHorseSkeleton implements Ridable
     @Override
     public void g(EntityHuman entityhuman) {
         Player player = (Player) entityhuman.getBukkitEntity();
-        if (!player.hasPermission("allow.ride.skeleton_horse")) {
+        if (!player.hasPermission("ridables.ride.skeleton_horse")) {
             Lang.send(player, Lang.RIDE_NO_PERMISSION);
             return;
         }
-        if (new RidableMountEvent(this, player).callEvent()) {
+        RidableMountEvent event = new RidableMountEvent(this, player);
+        Bukkit.getPluginManager().callEvent(event);
+        if (!event.isCancelled()) {
             super.g(entityhuman);
             entityhuman.o(false); // setJumping - fixes jump on mount
         }
     }
 
     @Override
-    public boolean removePassenger(Entity passenger, boolean notCancellable) {
+    public boolean removePassenger(Entity passenger) {
         if (passenger instanceof EntityPlayer && !passengers.isEmpty() && passenger == passengers.get(0)) {
-            if (!new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), notCancellable).callEvent() && !notCancellable) {
+            RidableDismountEvent event = new RidableDismountEvent(this, (Player) passenger.getBukkitEntity(), false);
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancellable()) {
                 return false; // cancelled
             }
         }
-        return super.removePassenger(passenger, notCancellable);
+        return super.removePassenger(passenger);
+    }
+
+    private static Field trapGoal;
+
+    static {
+        try {
+            trapGoal = EntityHorseSkeleton.class.getDeclaredField("bJ");
+            trapGoal.setAccessible(true);
+        } catch (NoSuchFieldException ignore) {
+        }
+    }
+
+    public static void setTrapGoal(EntityHorseSkeleton horse, PathfinderGoal pathfinderGoal) {
+        try {
+            trapGoal.set(horse, pathfinderGoal);
+        } catch (IllegalAccessException ignore) {
+        }
     }
 }

@@ -1,19 +1,25 @@
 package net.pl3x.bukkit.ridables.entity.projectile;
 
-import net.minecraft.server.v1_13_R2.BlockPosition;
-import net.minecraft.server.v1_13_R2.DamageSource;
-import net.minecraft.server.v1_13_R2.EntityInsentient;
-import net.minecraft.server.v1_13_R2.EntityLargeFireball;
-import net.minecraft.server.v1_13_R2.EntityLiving;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.MathHelper;
-import net.minecraft.server.v1_13_R2.MovingObjectPosition;
-import net.minecraft.server.v1_13_R2.Particles;
-import net.minecraft.server.v1_13_R2.ProjectileHelper;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.DamageSource;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityInsentient;
+import net.minecraft.server.v1_14_R1.EntityLargeFireball;
+import net.minecraft.server.v1_14_R1.EntityLiving;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.Explosion;
+import net.minecraft.server.v1_14_R1.MathHelper;
+import net.minecraft.server.v1_14_R1.MovingObjectPosition;
+import net.minecraft.server.v1_14_R1.MovingObjectPositionEntity;
+import net.minecraft.server.v1_14_R1.Particles;
+import net.minecraft.server.v1_14_R1.ProjectileHelper;
+import net.minecraft.server.v1_14_R1.RayTrace;
+import net.minecraft.server.v1_14_R1.Vec3D;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.entity.RidableEntity;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_13_R2.event.CraftEventFactory;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_14_R1.event.CraftEventFactory;
 import org.bukkit.entity.Explosive;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
@@ -27,8 +33,8 @@ public class CustomFireball extends EntityLargeFireball implements CustomProject
     private final boolean grief;
     private int ticksAlive;
 
-    public CustomFireball(World world) {
-        super(world);
+    public CustomFireball(EntityTypes<? extends EntityLargeFireball> entitytypes, World world) {
+        super(entitytypes, world);
         this.ridable = null;
         this.rider = null;
         this.speed = 1.0F;
@@ -60,7 +66,7 @@ public class CustomFireball extends EntityLargeFireball implements CustomProject
 
     @Override
     public Mob getMob() {
-        return ridable == null ? null : ((EntityInsentient) ridable).getBukkitMob();
+        return ridable == null ? null : (Mob) ((EntityInsentient) ridable).getBukkitEntity();
     }
 
     @Override
@@ -74,40 +80,29 @@ public class CustomFireball extends EntityLargeFireball implements CustomProject
             die();
             return;
         }
-        setFlag(6, bc());
-        W();
+        setFlag(6, bl());
+        entityBaseTick();
         setOnFire(1);
-        MovingObjectPosition mop = ProjectileHelper.a(this, true, ++ticksAlive >= 25, shooter);
-        if (mop != null && mop.entity != null) {
-            if (mop.entity == ridable || mop.entity == rider) {
-                mop = null; // dont hit self
-            } else if (!CraftEventFactory.callProjectileCollideEvent(this, mop).callEvent()) {
-                mop = null;
-            }
-        }
-        if (mop != null) {
+        MovingObjectPosition mop = ProjectileHelper.a(this, true, ++ticksAlive >= 25, shooter, RayTrace.BlockCollisionOption.COLLIDER);
+        if (mop.getType() != MovingObjectPosition.EnumMovingObjectType.MISS) {
             a(mop);
             if (dead) {
                 CraftEventFactory.callProjectileHitEvent(this, mop);
             }
         }
-        locX += motX * speed;
-        locY += motY * speed;
-        locZ += motZ * speed;
+        Vec3D mot = getMot();
+        locX += mot.x * speed;
+        locY += mot.y * speed;
+        locZ += mot.z * speed;
         ProjectileHelper.a(this, 0.2F);
-        double f = (double) k();
+        float f = k();
         if (isInWater()) {
             for (int i = 0; i < 4; ++i) {
-                world.addParticle(Particles.e, locX - motX * 0.25D, locY - motY * 0.25D, locZ - motZ * 0.25D, motX, motY, motZ);
+                world.addParticle(Particles.BUBBLE, locX - mot.x * 0.25D, locY - mot.y * 0.25D, locZ - mot.z * 0.25D, mot.x, mot.y, mot.z);
             }
-            f = 0.8D;
+            f = 0.8F;
         }
-        motX += dirX;
-        motY += dirY;
-        motZ += dirZ;
-        motX *= f;
-        motY *= f;
-        motZ *= f;
+        setMot(mot.add(dirX, dirY, dirZ).a((double) f));
         world.addParticle(i(), locX, locY + 0.5D, locZ, 0.0D, 0.0D, 0.0D);
         setPosition(locX, locY, locZ);
     }
@@ -115,16 +110,19 @@ public class CustomFireball extends EntityLargeFireball implements CustomProject
     // onImpact
     @Override
     protected void a(MovingObjectPosition mop) {
-        if (mop.entity != null) {
+        if (mop.getType() == MovingObjectPosition.EnumMovingObjectType.ENTITY) {
             if (damage > 0) {
-                mop.entity.damageEntity(DamageSource.fireball(this, shooter), (float) damage);
-                a(shooter, mop.entity);
+                Entity entity = ((MovingObjectPositionEntity) mop).getEntity();
+                EntityLiving owner = rider != null ? rider : shooter;
+                entity.damageEntity(DamageSource.fireball(this, owner), (float) damage);
+                a(owner, entity);
             }
         }
         ExplosionPrimeEvent event = new ExplosionPrimeEvent((Explosive) CraftEntity.getEntity(world.getServer(), this));
         world.getServer().getPluginManager().callEvent(event);
         if (!event.isCancelled()) {
-            world.createExplosion(this, locX, locY, locZ, event.getRadius(), event.getFire(), grief);
+            boolean flag = grief || world.getGameRules().getBoolean("mobGriefing");
+            world.createExplosion(this, locX, locY, locZ, event.getRadius(), event.getFire(), flag ? Explosion.Effect.DESTROY : Explosion.Effect.NONE);
         }
         die();
     }

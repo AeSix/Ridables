@@ -1,8 +1,8 @@
 package net.pl3x.bukkit.ridables.entity.ai.goal.enderman;
 
 import com.destroystokyo.paper.event.entity.EndermanEscapeEvent;
-import net.minecraft.server.v1_13_R2.EntityHuman;
-import net.minecraft.server.v1_13_R2.PathfinderGoalNearestAttackableTarget;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.PathfinderGoalNearestAttackableTarget;
 import net.pl3x.bukkit.ridables.entity.monster.RidableEnderman;
 import org.bukkit.entity.Enderman;
 

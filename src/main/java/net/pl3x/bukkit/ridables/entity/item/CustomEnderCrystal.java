@@ -1,10 +1,11 @@
 package net.pl3x.bukkit.ridables.entity.item;
 
-import net.minecraft.server.v1_13_R2.BlockPosition;
-import net.minecraft.server.v1_13_R2.DamageSource;
-import net.minecraft.server.v1_13_R2.EntityEnderCrystal;
-import net.minecraft.server.v1_13_R2.EntityPhantom;
-import net.minecraft.server.v1_13_R2.World;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.DamageSource;
+import net.minecraft.server.v1_14_R1.EntityEnderCrystal;
+import net.minecraft.server.v1_14_R1.EntityPhantom;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.World;
 import net.pl3x.bukkit.ridables.entity.monster.RidablePhantom;
 
 import java.util.function.Predicate;
@@ -19,8 +20,8 @@ public class CustomEnderCrystal extends EntityEnderCrystal {
     private int phantomDamageCooldown = 0;
     private int idleCooldown = 0;
 
-    public CustomEnderCrystal(World world) {
-        super(world);
+    public CustomEnderCrystal(EntityTypes<? extends EntityEnderCrystal> entitytypes, World world) {
+        super(entitytypes, world);
     }
 
     public CustomEnderCrystal(World world, double x, double y, double z) {
@@ -51,7 +52,7 @@ public class CustomEnderCrystal extends EntityEnderCrystal {
                 }
             }
         } else {
-            setBeamTarget(new BlockPosition(targetPhantom).add(0, -2, 0));
+            setBeamTarget(new BlockPosition(targetPhantom).b(0, -2, 0)); // add
             if (--phantomBeamTicks > 0 && targetPhantom.isAlive()) {
                 phantomDamageCooldown--;
                 if (targetPhantom.hasLineOfSight(this)) {
